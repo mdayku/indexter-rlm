@@ -99,14 +99,19 @@ Save/update repository registry:
 import json
 import logging
 import os
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import tomlkit
-import tomllib
 from pydantic import Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 logger = logging.getLogger(__name__)
 
