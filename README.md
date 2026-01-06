@@ -96,14 +96,14 @@ Indexter-RLM provides an MCP server for AI agent integration.
 |------|-------------|
 | `list_repositories()` | List all indexed repos with status |
 | `search_repository(name, query, ...)` | Semantic search with filters |
+| `read_file(name, path, start?, end?)` | Read file content with line numbers |
+| `get_symbols(name, path)` | List functions/classes in a file |
 
 ### Planned Tools
 
 | Tool | Description |
 |------|-------------|
-| `get_file(path, ...)` | Read file content |
-| `list_symbols(file_path)` | List functions/classes in a file |
-| `store_note(key, content)` | Save observations |
+| `store_note(key, content)` | Save observations (scratchpad) |
 | `get_notes()` | Retrieve accumulated context |
 
 ### Cursor Integration

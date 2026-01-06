@@ -105,9 +105,9 @@ This is recursion over **context**, not tokens.
 ### Phase 1: Navigation Tools (Current)
 - [x] `search_repository` - Semantic search
 - [x] `list_repositories` - Show indexed repos
-- [ ] `get_file` - Read actual file content
-- [ ] `list_symbols` - List functions/classes in a file
-- [ ] `find_references` - Find usages of a symbol
+- [x] `read_file` - Read actual file content with line numbers
+- [x] `get_symbols` - List functions/classes in a file
+- [ ] `find_references` - Find usages of a symbol (future)
 
 ### Phase 2: Stateful Context (Scratchpad)
 - [ ] `store_note` - Persist observations during exploration

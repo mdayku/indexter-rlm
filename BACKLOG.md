@@ -9,29 +9,22 @@
 #### Story 1.1: Get File Tool
 Add MCP tool to read actual file content.
 
-- [ ] **Task 1.1.1**: Add `get_file(path, start_line?, end_line?)` to `mcp/tools.py`
-- [ ] **Task 1.1.2**: Register tool in `mcp/server.py` with `@mcp.tool()`
+- [x] **Task 1.1.1**: Add `get_file(path, start_line?, end_line?)` to `mcp/tools.py`
+- [x] **Task 1.1.2**: Register tool in `mcp/server.py` with `@mcp.tool()`
 - [ ] **Task 1.1.3**: Add tests in `mcp/tests/test_tools.py`
-- [ ] **Task 1.1.4**: Update `mcp/prompts.py` workflow guide
+- [x] **Task 1.1.4**: Update `mcp/prompts.py` workflow guide
 
-**Acceptance Criteria**:
-- Agent can read file content by path
-- Optional line range filtering
-- Returns file content with line numbers
-- Graceful error handling for missing files
+**Status**: Implemented, tested manually
 
 #### Story 1.2: List Symbols Tool
 Add MCP tool to list functions/classes in a file.
 
-- [ ] **Task 1.2.1**: Add `list_symbols(repo_name, file_path)` to `mcp/tools.py`
-- [ ] **Task 1.2.2**: Leverage existing tree-sitter parsing in `parsers/`
-- [ ] **Task 1.2.3**: Return structured list: `[{name, type, line, signature}]`
+- [x] **Task 1.2.1**: Add `list_symbols(repo_name, file_path)` to `mcp/tools.py`
+- [x] **Task 1.2.2**: Leverage existing tree-sitter parsing in `parsers/`
+- [x] **Task 1.2.3**: Return structured list: `[{name, type, line, signature}]`
 - [ ] **Task 1.2.4**: Add tests
 
-**Acceptance Criteria**:
-- Agent can list all functions/classes in a file
-- Returns name, type (function/class/method), line number
-- Optionally includes signature
+**Status**: Implemented, tested manually
 
 ---
 
