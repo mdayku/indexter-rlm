@@ -77,7 +77,28 @@ Add MCP tool to list functions/classes in a file.
 
 ---
 
-### Epic 4: Find References (Advanced)
+### Epic 4: Embedding Model Options (Optional)
+
+**Goal**: Support alternative embedding models for quality/cost tradeoffs.
+
+#### Story 4.1: Upgrade to bge-base
+- [ ] Test `BAAI/bge-base-en-v1.5` (768 dims vs 384)
+- [ ] Document re-indexing requirements
+- [ ] Benchmark quality difference
+
+#### Story 4.2: OpenAI Embeddings Support
+- [ ] Add `embedding_provider` config option (`local` | `openai`)
+- [ ] Implement OpenAI embedding generation in `store.py`
+- [ ] Use `OPENAI_API_KEY` from environment
+- [ ] Fall back to local if no key
+- [ ] Add `text-embedding-3-small` and `text-embedding-3-large` options
+- [ ] Update documentation
+
+**Note**: Current model `bge-small-en-v1.5` is good. This is optimization, not critical path.
+
+---
+
+### Epic 5: Find References (Advanced)
 
 **Goal**: Enable cross-file navigation by finding symbol usages.
 
@@ -91,7 +112,7 @@ Add MCP tool to list functions/classes in a file.
 
 ---
 
-### Epic 5: Evaluation Framework
+### Epic 6: Evaluation Framework
 
 **Goal**: Measure RLM approach vs baselines.
 
