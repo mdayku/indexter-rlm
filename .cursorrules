@@ -1,0 +1,113 @@
+# Indexter-RLM Cursor Rules
+
+## Indexter Integration (Semantic Code Search)
+
+For any task involving:
+- Understanding existing code
+- Modifying non-trivial logic
+- Debugging behavior
+- Refactoring
+- Explaining system design
+
+You MUST:
+1. Query Indexter via MCP with a semantic search describing the intent.
+2. Review the returned code snippets before proposing changes.
+3. Cite the retrieved code in your reasoning.
+
+Do NOT rely on assumptions or prior messages as a substitute for Indexter results.
+If Indexter returns no results, state that explicitly.
+
+---
+
+## Quick Reference
+
+```bash
+# Development
+pip install -e ".[full]"        # Install with all extras
+pytest                          # Run tests
+ruff check . --fix              # Lint and fix
+ruff format .                   # Format code
+
+# CLI
+indexter-rlm init <path>        # Register a repo
+indexter-rlm index <name>       # Index a repo
+indexter-rlm search "<query>" <name>  # Search
+indexter-rlm status             # Show all repos
+
+# MCP Server
+rlm-mcp                         # Start MCP server (stdio)
+```
+
+## Code Style
+
+- **Ruff**: 100 char lines, double quotes, trailing commas in multi-line
+- **Type hints**: All function signatures (args + return types)
+- **Docstrings**: Google-style for public functions/classes
+- **Python**: >=3.10
+
+```python
+async def search_repo(
+    name: str,
+    query: str,
+    limit: int | None = None,
+) -> dict:
+    """Search a repository for semantically similar code.
+
+    Args:
+        name: Repository name.
+        query: Natural language search query.
+        limit: Maximum results to return.
+
+    Returns:
+        Dict with results list and count.
+    """
+```
+
+## Agent Safety Rules (MUST FOLLOW)
+
+1. **No broad refactors** without explicit user request
+2. **No new dependencies** without updating `pyproject.toml`
+3. **No changes to public models** (`Repo`, `RepoSettings`, `IndexResult`) without updating tests
+4. **Always add/update tests** when touching models, store, or MCP tools
+5. **Avoid new files** unless necessary; prefer extending existing modules
+
+**Critical modules** (require careful changes):
+- `src/indexter_rlm/models.py` - `Repo`, `IndexResult`
+- `src/indexter_rlm/config.py` - `Settings`, `RepoSettings`
+- `src/indexter_rlm/mcp/server.py` - MCP tool definitions
+- `src/indexter_rlm/store.py` - Vector store operations
+
+## Where to Add Things
+
+| What | Where |
+|------|-------|
+| CLI commands | `src/indexter_rlm/cli/cli.py` |
+| CLI config subcommands | `src/indexter_rlm/cli/config.py` |
+| MCP tools | `src/indexter_rlm/mcp/server.py` (define) + `mcp/tools.py` (implement) |
+| MCP prompts | `src/indexter_rlm/mcp/prompts.py` |
+| Language parsers | `src/indexter_rlm/parsers/<language>.py` |
+| Tests | `src/indexter_rlm/<module>/tests/` |
+
+## MCP Tool Changes Checklist
+
+When adding new MCP tools:
+- [ ] Add tool function in `mcp/tools.py`
+- [ ] Register with `@mcp.tool()` in `mcp/server.py`
+- [ ] Add tests in `mcp/tests/test_tools.py`
+- [ ] Update `mcp/prompts.py` workflow guide
+- [ ] Update README.md MCP section
+
+## Parser Changes Checklist
+
+When adding/modifying language parsers:
+- [ ] Create/update parser in `parsers/<language>.py`
+- [ ] Register in `parsers/__init__.py`
+- [ ] Add tests in `parsers/tests/test_<language>_parser.py`
+- [ ] Update README.md supported languages
+
+## Documentation
+
+- Keep `BACKLOG.md` focused on active work (current sprint)
+- `PRD.md` contains vision, architecture decisions, and changelog
+- `ARCHITECTURE.md` documents system design and data flow
+
