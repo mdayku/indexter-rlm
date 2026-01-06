@@ -69,7 +69,7 @@ def version_callback(value: bool) -> None:
         typer.Exit: Always raised when value is True to exit the application.
     """
     if value:
-        console.print(f"indexter {__version__}")
+        console.print(f"indexter-rlm {__version__}")
         raise typer.Exit()
 
 
