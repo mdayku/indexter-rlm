@@ -12,7 +12,7 @@ from fastmcp import FastMCP
 from indexter_rlm.config import settings
 
 from .prompts import get_search_workflow
-from .tools import list_repos, search_repo
+from .tools import get_file, list_repos, list_symbols, search_repo
 
 # Create the MCP server
 mcp = FastMCP(
@@ -72,6 +72,55 @@ async def search_repository(
         has_documentation=has_documentation,
         limit=limit,
     )
+
+
+@mcp.tool()
+async def read_file(
+    name: str,
+    file_path: str,
+    start_line: int | None = None,
+    end_line: int | None = None,
+) -> dict:
+    """
+    Read file content from an Indexter-configured repository.
+
+    Use this tool after search_repository to inspect actual source code.
+    Supports optional line range filtering for large files.
+
+    Args:
+        name: The repository name.
+        file_path: Path to the file relative to repository root.
+        start_line: Optional starting line number (1-based, inclusive).
+        end_line: Optional ending line number (1-based, inclusive).
+
+    Returns file content with line numbers, path, and metadata.
+    """
+    return await get_file(
+        name=name,
+        file_path=file_path,
+        start_line=start_line,
+        end_line=end_line,
+    )
+
+
+@mcp.tool()
+async def get_symbols(
+    name: str,
+    file_path: str,
+) -> dict:
+    """
+    List all symbols (functions, classes, methods) in a file.
+
+    Use this tool to understand a file's structure before reading
+    specific sections with read_file.
+
+    Args:
+        name: The repository name.
+        file_path: Path to the file relative to repository root.
+
+    Returns list of symbols with name, type, line number, and signature.
+    """
+    return await list_symbols(name=name, file_path=file_path)
 
 
 @mcp.prompt()
