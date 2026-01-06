@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from indexter_rlm.config import StoreMode
+from indexter_rlm.config import EmbeddingProvider, EmbeddingSettings, StoreMode
 from indexter_rlm.models import Node, NodeMetadata
 from indexter_rlm.store import VectorStore
 
@@ -80,8 +80,8 @@ class TestVectorStoreInit:
 class TestVectorStoreClient:
     """Tests for VectorStore.client property."""
 
-    @patch("indexter.store.AsyncQdrantClient")
-    @patch("indexter.store.settings")
+    @patch("indexter_rlm.store.AsyncQdrantClient")
+    @patch("indexter_rlm.store.settings")
     def test_client_local_mode(self, mock_settings, mock_qdrant_client):
         """Test client creation in local mode."""
         # Setup
@@ -96,7 +96,11 @@ class TestVectorStoreClient:
         mock_data_dir.__truediv__ = Mock(return_value=mock_store_path)
         mock_settings.data_dir = mock_data_dir
 
-        mock_settings.embedding_model = "test-model"
+        # Use proper EmbeddingSettings
+        mock_settings.embedding = EmbeddingSettings(
+            provider=EmbeddingProvider.local, model="test-model"
+        )
+        mock_settings.embedding_model = "test-model"  # Backward compat property
 
         mock_client_instance = MagicMock()
         mock_client_instance.get_fastembed_vector_params.return_value = {"test-vector": {}}
@@ -113,8 +117,8 @@ class TestVectorStoreClient:
         assert store._embedding_model_name == "test-model"
         assert store._vector_name == "test-vector"
 
-    @patch("indexter.store.AsyncQdrantClient")
-    @patch("indexter.store.settings")
+    @patch("indexter_rlm.store.AsyncQdrantClient")
+    @patch("indexter_rlm.store.settings")
     def test_client_memory_mode(self, mock_settings, mock_qdrant_client):
         """Test client creation in memory mode."""
         # Setup
@@ -133,8 +137,8 @@ class TestVectorStoreClient:
         mock_qdrant_client.assert_called_once_with(location=":memory:")
         mock_client_instance.set_model.assert_called_once_with("test-model")
 
-    @patch("indexter.store.AsyncQdrantClient")
-    @patch("indexter.store.settings")
+    @patch("indexter_rlm.store.AsyncQdrantClient")
+    @patch("indexter_rlm.store.settings")
     def test_client_remote_mode(self, mock_settings, mock_qdrant_client):
         """Test client creation in remote mode."""
         # Setup
@@ -165,8 +169,8 @@ class TestVectorStoreClient:
         )
         mock_client_instance.set_model.assert_called_once_with("test-model")
 
-    @patch("indexter.store.AsyncQdrantClient")
-    @patch("indexter.store.settings")
+    @patch("indexter_rlm.store.AsyncQdrantClient")
+    @patch("indexter_rlm.store.settings")
     def test_client_cached_on_second_access(self, mock_settings, mock_qdrant_client):
         """Test that client is cached and not recreated."""
         # Setup
@@ -496,7 +500,8 @@ class TestVectorStoreUpsertNodes:
         assert call_args[1]["collection_name"] == "test_collection"
         points = call_args[1]["points"]
         assert len(points) == 1
-        assert points[0].id == sample_node.id
+        # Compare as strings since Qdrant stores IDs as strings
+        assert points[0].id == str(sample_node.id)
 
     @pytest.mark.asyncio
     async def test_upsert_nodes_multiple_nodes(self, vector_store, sample_nodes):

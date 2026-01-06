@@ -12,6 +12,9 @@ from anyio import create_task_group
 from indexter_rlm.models import Repo
 from indexter_rlm.parsers import get_parser
 
+from .exploration_log import get_exploration_logger
+from .notes import get_note_store
+
 
 async def list_repos() -> list[dict]:
     """
@@ -86,6 +89,21 @@ async def search_repo(
         has_documentation=has_documentation,
         limit=limit,
     )
+
+    # Log the search
+    exploration_logger = get_exploration_logger(name)
+    exploration_logger.log(
+        tool="search_repository",
+        args={
+            "query": query,
+            "file_path": file_path,
+            "language": language,
+            "node_type": node_type,
+            "limit": limit,
+        },
+        result_summary={"count": len(results)},
+    )
+
     return {"results": results, "count": len(results)}
 
 
@@ -163,6 +181,18 @@ async def get_file(
         for i, line in enumerate(lines, start=actual_start)
     ]
     formatted_content = "\n".join(numbered_lines)
+
+    # Log the file read
+    exploration_logger = get_exploration_logger(name)
+    exploration_logger.log(
+        tool="read_file",
+        args={
+            "file_path": file_path,
+            "start_line": start_line,
+            "end_line": end_line,
+        },
+        result_summary={"lines_read": actual_end - actual_start + 1, "total_lines": total_lines},
+    )
 
     return {
         "repository": name,
@@ -256,6 +286,400 @@ async def list_symbols(
             "file_path": file_path,
             "symbols": [],
         }
+
+    # Sort by line number
+    symbols.sort(key=lambda s: s["line"])
+
+    return {
+        "repository": name,
+        "file_path": file_path,
+        "symbols": symbols,
+        "count": len(symbols),
+    }
+
+
+# =============================================================================
+# Note Tools (Scratchpad)
+# =============================================================================
+
+
+async def store_note(
+    name: str,
+    key: str,
+    content: str,
+    tags: list[str] | None = None,
+) -> dict:
+    """
+    Store a note in the repository's scratchpad.
+
+    Use this to record observations, hypotheses, and findings during
+    code exploration. Notes persist across sessions.
+
+    Args:
+        name: The repository name.
+        key: Unique identifier for the note (overwrites if exists).
+        content: The note content.
+        tags: Optional list of tags for categorization.
+
+    Returns:
+        Dict with the stored note details.
+    """
+    # Validate repo exists
+    await Repo.get(name)
+
+    note_store = get_note_store(name)
+    note = note_store.store(key=key, content=content, tags=tags)
+
+    # Log the note creation
+    exploration_logger = get_exploration_logger(name)
+    exploration_logger.log(
+        tool="save_note",
+        args={"key": key, "tags": tags},
+        result_summary={"content_length": len(content)},
+    )
+
+    return {
+        "repository": name,
+        "action": "stored",
+        "note": note.model_dump_for_display(),
+    }
+
+
+async def get_note(
+    name: str,
+    key: str,
+) -> dict:
+    """
+    Retrieve a single note by key.
+
+    Args:
+        name: The repository name.
+        key: The note key to retrieve.
+
+    Returns:
+        Dict with the note details, or error if not found.
+    """
+    # Validate repo exists
+    await Repo.get(name)
+
+    note_store = get_note_store(name)
+    note = note_store.get(key)
+
+    if note is None:
+        return {
+            "repository": name,
+            "error": f"Note not found: {key}",
+        }
+
+    return {
+        "repository": name,
+        "note": note.model_dump_for_display(),
+    }
+
+
+async def get_notes(
+    name: str,
+    tag: str | None = None,
+) -> dict:
+    """
+    List all notes for a repository, optionally filtered by tag.
+
+    Args:
+        name: The repository name.
+        tag: Optional tag to filter notes by.
+
+    Returns:
+        Dict with list of notes and count.
+    """
+    # Validate repo exists
+    await Repo.get(name)
+
+    note_store = get_note_store(name)
+    notes = note_store.list(tag=tag)
+
+    return {
+        "repository": name,
+        "filter_tag": tag,
+        "notes": [n.model_dump_for_display() for n in notes],
+        "count": len(notes),
+    }
+
+
+async def delete_note(
+    name: str,
+    key: str,
+) -> dict:
+    """
+    Delete a note by key.
+
+    Args:
+        name: The repository name.
+        key: The note key to delete.
+
+    Returns:
+        Dict indicating success or failure.
+    """
+    # Validate repo exists
+    await Repo.get(name)
+
+    note_store = get_note_store(name)
+    deleted = note_store.delete(key)
+
+    if deleted:
+        return {
+            "repository": name,
+            "action": "deleted",
+            "key": key,
+        }
+    else:
+        return {
+            "repository": name,
+            "error": f"Note not found: {key}",
+        }
+
+
+async def clear_notes(
+    name: str,
+) -> dict:
+    """
+    Delete all notes for a repository.
+
+    Args:
+        name: The repository name.
+
+    Returns:
+        Dict with count of deleted notes.
+    """
+    # Validate repo exists
+    await Repo.get(name)
+
+    note_store = get_note_store(name)
+    count = note_store.clear()
+
+    return {
+        "repository": name,
+        "action": "cleared",
+        "notes_deleted": count,
+    }
+
+
+# =============================================================================
+# Exploration Logging
+# =============================================================================
+
+
+async def get_exploration_summary(
+    name: str,
+) -> dict:
+    """
+    Get a summary of the current exploration session.
+
+    Returns statistics about tool calls, searches, and files read
+    during the current session.
+
+    Args:
+        name: The repository name.
+
+    Returns:
+        Dict with session statistics.
+    """
+    # Validate repo exists
+    await Repo.get(name)
+
+    exploration_logger = get_exploration_logger(name)
+    summary = exploration_logger.get_summary()
+
+    return summary
+
+
+# =============================================================================
+# Symbol Navigation Tools
+# =============================================================================
+
+
+async def find_symbol_references(
+    name: str,
+    symbol_name: str,
+    include_imports: bool = True,
+) -> dict:
+    """
+    Find all references to a symbol across the repository.
+
+    Args:
+        name: The repository name.
+        symbol_name: Name of the symbol to find references for.
+        include_imports: Include import chains (default True).
+
+    Returns:
+        Dict with definitions, references, and import chains.
+    """
+    from indexter_rlm.symbol_extractor import build_symbol_index
+    from indexter_rlm.walker import Walker
+
+    repo = await Repo.get(name)
+    repo_path = Path(repo.path)
+
+    # Get list of Python files
+    walker = Walker(repo)
+    documents = [doc async for doc in walker.walk()]
+    py_files = [doc["path"] for doc in documents if doc["path"].endswith(".py")]
+
+    # Build/update symbol index
+    index = await build_symbol_index(repo.name, repo_path, py_files)
+
+    # Find definitions
+    definitions = index.find_definitions(symbol_name)
+    definition_results = [
+        {
+            "name": d.name,
+            "qualified_name": d.qualified_name,
+            "type": d.symbol_type,
+            "file_path": d.file_path,
+            "line": d.line,
+            "end_line": d.end_line,
+            "signature": d.signature,
+            "documentation": d.documentation[:500] if d.documentation else "",
+        }
+        for d in definitions
+    ]
+
+    # Find references
+    references = index.find_references(symbol_name)
+    reference_results = [
+        {
+            "file_path": r.file_path,
+            "line": r.line,
+            "column": r.column,
+            "context": r.context,
+            "ref_type": r.ref_type,
+        }
+        for r in references
+    ]
+
+    result = {
+        "symbol_name": symbol_name,
+        "repository": name,
+        "definitions": definition_results,
+        "definitions_count": len(definition_results),
+        "references": reference_results,
+        "references_count": len(reference_results),
+    }
+
+    # Include import chains if requested
+    if include_imports:
+        import_chains = index.get_import_chain(symbol_name)
+        result["import_chains"] = import_chains
+        result["import_chains_count"] = len(import_chains)
+
+    # Log the exploration
+    exploration_logger = get_exploration_logger(name)
+    exploration_logger.log(
+        tool="find_references",
+        args={"symbol_name": symbol_name},
+        result_summary={
+            "definitions": len(definition_results),
+            "references": len(reference_results),
+        },
+    )
+
+    return result
+
+
+async def find_symbol_definition(
+    name: str,
+    symbol_name: str,
+) -> dict:
+    """
+    Find where a symbol is defined.
+
+    Args:
+        name: The repository name.
+        symbol_name: Name of the symbol to find.
+
+    Returns:
+        Dict with definition locations.
+    """
+    from indexter_rlm.symbol_extractor import build_symbol_index
+    from indexter_rlm.walker import Walker
+
+    repo = await Repo.get(name)
+    repo_path = Path(repo.path)
+
+    # Get list of Python files
+    walker = Walker(repo)
+    documents = [doc async for doc in walker.walk()]
+    py_files = [doc["path"] for doc in documents if doc["path"].endswith(".py")]
+
+    # Build/update symbol index
+    index = await build_symbol_index(repo.name, repo_path, py_files)
+
+    # Find definitions
+    definitions = index.find_definitions(symbol_name)
+
+    if not definitions:
+        return {
+            "symbol_name": symbol_name,
+            "repository": name,
+            "error": f"No definition found for '{symbol_name}'",
+            "definitions": [],
+        }
+
+    return {
+        "symbol_name": symbol_name,
+        "repository": name,
+        "definitions": [
+            {
+                "name": d.name,
+                "qualified_name": d.qualified_name,
+                "type": d.symbol_type,
+                "file_path": d.file_path,
+                "line": d.line,
+                "end_line": d.end_line,
+                "signature": d.signature,
+                "documentation": d.documentation[:500] if d.documentation else "",
+            }
+            for d in definitions
+        ],
+        "count": len(definitions),
+    }
+
+
+async def list_file_symbols(
+    name: str,
+    file_path: str,
+) -> dict:
+    """
+    List all symbols defined in a file.
+
+    Args:
+        name: The repository name.
+        file_path: Path to the file.
+
+    Returns:
+        Dict with list of symbols in the file.
+    """
+    from indexter_rlm.symbol_extractor import build_symbol_index
+
+    repo = await Repo.get(name)
+    repo_path = Path(repo.path)
+
+    # Build/update symbol index for this file
+    index = await build_symbol_index(repo.name, repo_path, [file_path])
+
+    # Get symbols for this file
+    symbol_names = index.file_symbols.get(file_path, [])
+
+    symbols = []
+    for sym_name in symbol_names:
+        for defn in index.find_definitions(sym_name):
+            if defn.file_path == file_path:
+                symbols.append({
+                    "name": defn.name,
+                    "qualified_name": defn.qualified_name,
+                    "type": defn.symbol_type,
+                    "line": defn.line,
+                    "signature": defn.signature,
+                })
 
     # Sort by line number
     symbols.sort(key=lambda s: s["line"])

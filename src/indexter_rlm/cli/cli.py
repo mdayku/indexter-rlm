@@ -43,6 +43,7 @@ from indexter_rlm.exceptions import RepoExistsError, RepoNotFoundError
 from indexter_rlm.models import IndexResult, Repo
 
 from .config import config_app
+from .hooks import hooks_app
 
 app = typer.Typer(
     name="indexter-rlm",
@@ -51,6 +52,7 @@ app = typer.Typer(
     rich_markup_mode="rich",
 )
 app.add_typer(config_app, name="config")
+app.add_typer(hooks_app, name="hook")
 
 
 console = Console()

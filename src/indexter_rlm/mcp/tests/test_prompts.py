@@ -12,19 +12,20 @@ def test_search_workflow_prompt_exists():
 
 def test_search_workflow_prompt_has_title():
     """Test that the prompt has a workflow title."""
-    assert "Indexter Code Search Workflow" in SEARCH_WORKFLOW_PROMPT
-    assert "# Indexter Code Search Workflow" in SEARCH_WORKFLOW_PROMPT
+    assert "Indexter-RLM Exploration Workflow" in SEARCH_WORKFLOW_PROMPT
+    assert "# Indexter-RLM" in SEARCH_WORKFLOW_PROMPT
 
 
-def test_search_workflow_prompt_contains_repository_listing_step():
-    """Test that the prompt includes instructions for listing repositories."""
-    assert "List available repositories" in SEARCH_WORKFLOW_PROMPT
-    assert "list_repos" in SEARCH_WORKFLOW_PROMPT
+def test_search_workflow_prompt_contains_rlm_loop():
+    """Test that the prompt includes the RLM loop steps."""
+    assert "The RLM Loop" in SEARCH_WORKFLOW_PROMPT
+    assert "Search" in SEARCH_WORKFLOW_PROMPT
+    assert "Open" in SEARCH_WORKFLOW_PROMPT
+    assert "Understand" in SEARCH_WORKFLOW_PROMPT
 
 
 def test_search_workflow_prompt_contains_filter_information():
     """Test that the prompt includes information about search filters."""
-    assert "Use filters effectively" in SEARCH_WORKFLOW_PROMPT
     assert "file_path" in SEARCH_WORKFLOW_PROMPT
     assert "language" in SEARCH_WORKFLOW_PROMPT
     assert "node_type" in SEARCH_WORKFLOW_PROMPT
@@ -32,28 +33,32 @@ def test_search_workflow_prompt_contains_filter_information():
     assert "has_documentation" in SEARCH_WORKFLOW_PROMPT
 
 
-def test_search_workflow_prompt_contains_error_handling():
-    """Test that the prompt includes error handling guidance."""
-    assert "Handle errors" in SEARCH_WORKFLOW_PROMPT
-    assert "repo is not found" in SEARCH_WORKFLOW_PROMPT
+def test_search_workflow_prompt_contains_note_tools():
+    """Test that the prompt includes scratchpad/note tools."""
+    assert "save_note" in SEARCH_WORKFLOW_PROMPT
+    assert "retrieve_note" in SEARCH_WORKFLOW_PROMPT
+    assert "list_notes" in SEARCH_WORKFLOW_PROMPT
+    assert "remove_note" in SEARCH_WORKFLOW_PROMPT
 
 
 def test_search_workflow_prompt_contains_example_workflow():
     """Test that the prompt includes an example workflow."""
-    assert "Example Workflow" in SEARCH_WORKFLOW_PROMPT
+    assert "Example" in SEARCH_WORKFLOW_PROMPT
     assert "```" in SEARCH_WORKFLOW_PROMPT
 
 
-def test_search_workflow_prompt_example_shows_all_steps():
-    """Test that the example workflow demonstrates all key steps."""
-    assert 'call_tool("list_repos")' in SEARCH_WORKFLOW_PROMPT
-    assert 'call_tool("search_repo"' in SEARCH_WORKFLOW_PROMPT
+def test_search_workflow_prompt_example_shows_tools():
+    """Test that the example workflow demonstrates key tools."""
+    assert "search_repository" in SEARCH_WORKFLOW_PROMPT
+    assert "get_symbols" in SEARCH_WORKFLOW_PROMPT
+    assert "read_file" in SEARCH_WORKFLOW_PROMPT
 
 
-def test_search_workflow_prompt_mentions_automatic_indexing():
-    """Test that the prompt mentions automatic indexing."""
-    assert "automatically" in SEARCH_WORKFLOW_PROMPT.lower()
-    assert "index" in SEARCH_WORKFLOW_PROMPT.lower()
+def test_search_workflow_prompt_contains_key_principles():
+    """Test that the prompt mentions key principles."""
+    assert "Key Principles" in SEARCH_WORKFLOW_PROMPT
+    assert "Search before reasoning" in SEARCH_WORKFLOW_PROMPT
+    assert "Take notes" in SEARCH_WORKFLOW_PROMPT
 
 
 def test_search_workflow_prompt_filter_examples():
@@ -65,10 +70,12 @@ def test_search_workflow_prompt_filter_examples():
 
 def test_search_workflow_prompt_has_numbered_steps():
     """Test that the workflow includes numbered steps."""
-    # Should have numbered steps 1-3
+    # Should have numbered steps 1-5
     assert "1." in SEARCH_WORKFLOW_PROMPT
     assert "2." in SEARCH_WORKFLOW_PROMPT
     assert "3." in SEARCH_WORKFLOW_PROMPT
+    assert "4." in SEARCH_WORKFLOW_PROMPT
+    assert "5." in SEARCH_WORKFLOW_PROMPT
 
 
 def test_search_workflow_prompt_structured_sections():
@@ -125,9 +132,9 @@ def test_search_workflow_prompt_uses_correct_tool_names():
     """Test that the prompt uses the correct tool names."""
     prompt = SEARCH_WORKFLOW_PROMPT
 
-    # Should use list_repos and search_repo
-    assert "list_repos" in prompt
-    assert "search_repo" in prompt
+    # Should use list_repositories and search_repository
+    assert "list_repositories" in prompt
+    assert "search_repository" in prompt
 
     # Should NOT reference old resource URIs
     assert "repos://" not in prompt
@@ -175,9 +182,8 @@ async def test_get_prompt_search_workflow_content(mcp_client):
                 message_text += message.content.text
 
     # Verify key content is present
-    assert "Indexter Code Search Workflow" in message_text
-    assert "list_repos" in message_text
-    assert "search_repo" in message_text
+    assert "Indexter-RLM Exploration Workflow" in message_text
+    assert "search_repository" in message_text
 
 
 async def test_get_prompt_search_workflow_matches_constant(mcp_client):

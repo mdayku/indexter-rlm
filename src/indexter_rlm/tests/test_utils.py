@@ -348,7 +348,7 @@ def test_compute_hash_uses_sha256():
     """Test compute_hash uses sha256 algorithm."""
     content = "test"
 
-    with patch("indexter.utils.hashlib.sha256") as mock_sha256:
+    with patch("indexter_rlm.utils.hashlib.sha256") as mock_sha256:
         mock_sha256.return_value.hexdigest.return_value = "mocked_hash"
 
         result = compute_hash(content)
@@ -370,7 +370,7 @@ def test_compute_hash_encodes_string_to_bytes():
     """Test compute_hash properly encodes string to bytes."""
     content = "test string"
 
-    with patch("indexter.utils.hashlib.sha256") as mock_sha256:
+    with patch("indexter_rlm.utils.hashlib.sha256") as mock_sha256:
         mock_sha256.return_value.hexdigest.return_value = "hash"
 
         compute_hash(content)
@@ -386,7 +386,7 @@ def test_compute_hash_returns_hexdigest():
     content = "test"
     expected_hash = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
 
-    with patch("indexter.utils.hashlib.sha256") as mock_sha256:
+    with patch("indexter_rlm.utils.hashlib.sha256") as mock_sha256:
         mock_instance = mock_sha256.return_value
         mock_instance.hexdigest.return_value = expected_hash
 

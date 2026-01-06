@@ -44,9 +44,12 @@ Configuration File Format
 -------------------------
 Global config (indexter.toml):
 
-    embedding_model = "BAAI/bge-small-en-v1.5"
     max_file_size = 1048576
     ignore_patterns = [".git/", "__pycache__/", "*.pyc"]
+
+    [embedding]
+    provider = "local"  # or "openai"
+    model = "BAAI/bge-small-en-v1.5"  # or "text-embedding-3-small"
 
     [store]
     mode = "local"  # or "remote" or "memory"
@@ -57,13 +60,14 @@ Global config (indexter.toml):
 Repo config (indexter.toml or pyproject.toml):
 
     # indexter.toml
-    embedding_model = "custom-model"
+    [embedding]
+    model = "BAAI/bge-base-en-v1.5"  # upgrade to larger model
     ignore_patterns = ["custom/", "patterns/"]
 
     # OR in pyproject.toml
-    [tool.indexter]
-    embedding_model = "custom-model"
-    ignore_patterns = ["custom/", "patterns/"]
+    [tool.indexter.embedding]
+    provider = "openai"
+    model = "text-embedding-3-small"
 
 Usage
 -----
@@ -95,12 +99,12 @@ Save/update repository registry:
 import json
 import logging
 import os
-import tomllib
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 import tomlkit
+import tomllib
 from pydantic import Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -353,6 +357,85 @@ class StoreMode(StrEnum):
     memory = "memory"  # In-memory storage (for testing)
 
 
+class EmbeddingProvider(StrEnum):
+    """
+    Embedding generation provider.
+
+    Defines which service generates vector embeddings for code chunks.
+
+    Attributes:
+        local: Local FastEmbed models (default, no API key needed).
+        openai: OpenAI text-embedding models (requires OPENAI_API_KEY).
+    """
+
+    local = "local"  # Local FastEmbed models
+    openai = "openai"  # OpenAI embeddings API
+
+
+# Known embedding models with their dimensions
+EMBEDDING_MODELS = {
+    # Local FastEmbed models
+    "BAAI/bge-small-en-v1.5": {"dims": 384, "provider": "local"},
+    "BAAI/bge-base-en-v1.5": {"dims": 768, "provider": "local"},
+    "BAAI/bge-large-en-v1.5": {"dims": 1024, "provider": "local"},
+    # OpenAI models
+    "text-embedding-3-small": {"dims": 1536, "provider": "openai"},
+    "text-embedding-3-large": {"dims": 3072, "provider": "openai"},
+    "text-embedding-ada-002": {"dims": 1536, "provider": "openai"},
+}
+
+
+class EmbeddingSettings(BaseSettings):
+    """
+    Embedding generation settings.
+
+    Configuration for vector embedding generation, supporting both local
+    FastEmbed models and OpenAI's embedding API.
+
+    Attributes:
+        provider: Which service generates embeddings (local or openai).
+        model: The embedding model name.
+        openai_api_key: API key for OpenAI (from env OPENAI_API_KEY).
+
+    Environment Variables:
+        INDEXTER_EMBEDDING_PROVIDER: Override embedding provider.
+        INDEXTER_EMBEDDING_MODEL: Override embedding model.
+        OPENAI_API_KEY: Set OpenAI API key.
+
+    Model Options:
+        Local (FastEmbed):
+            - BAAI/bge-small-en-v1.5 (384 dims, default)
+            - BAAI/bge-base-en-v1.5 (768 dims, better quality)
+            - BAAI/bge-large-en-v1.5 (1024 dims, best quality)
+
+        OpenAI:
+            - text-embedding-3-small (1536 dims, fast)
+            - text-embedding-3-large (3072 dims, best quality)
+            - text-embedding-ada-002 (1536 dims, legacy)
+    """
+
+    model_config = SettingsConfigDict(env_prefix="INDEXTER_EMBEDDING_")
+
+    provider: EmbeddingProvider = EmbeddingProvider.local
+    model: str = "BAAI/bge-small-en-v1.5"
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+
+    @field_validator("provider", mode="before")
+    @classmethod
+    def validate_provider(cls, v: Any) -> EmbeddingProvider:
+        """Convert string to EmbeddingProvider enum."""
+        if isinstance(v, str):
+            return EmbeddingProvider(v.lower())
+        return v
+
+    def get_model_dims(self) -> int:
+        """Get the vector dimensions for the current model."""
+        if self.model in EMBEDDING_MODELS:
+            return EMBEDDING_MODELS[self.model]["dims"]
+        # Default to 384 for unknown local models
+        return 384 if self.provider == EmbeddingProvider.local else 1536
+
+
 class StoreSettings(BaseSettings):
     """
     Vector Store settings.
@@ -396,7 +479,7 @@ class DefaultSettings(BaseSettings):
     per-repository settings.
 
     Attributes:
-        embedding_model: HuggingFace model for generating vector embeddings.
+        embedding: Embedding generation settings (provider, model, API key).
         ignore_patterns: File patterns to exclude from indexing.
         max_file_size: Maximum file size in bytes to process (default: 1 MB).
         max_files: Maximum number of files to index per repository.
@@ -404,12 +487,20 @@ class DefaultSettings(BaseSettings):
         upsert_batch_size: Number of documents to batch for vector store operations.
     """
 
-    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    model_config = SettingsConfigDict(extra="ignore")
+
+    embedding: EmbeddingSettings = Field(default_factory=EmbeddingSettings)
     ignore_patterns: list[str] = Field(default_factory=lambda: DEFAULT_IGNORE_PATTERNS.copy())
     max_file_size: int = 1 * 1024 * 1024  # 1 MB
     max_files: int = 1000
     top_k: int = 10
     upsert_batch_size: int = 100
+
+    # Backward compatibility property
+    @property
+    def embedding_model(self) -> str:
+        """Get the embedding model name (backward compatibility)."""
+        return self.embedding.model
 
 
 class Settings(DefaultSettings):
@@ -435,6 +526,7 @@ class Settings(DefaultSettings):
         env_prefix="INDEXTER_",
         env_nested_delimiter="__",
         validate_assignment=True,
+        extra="ignore",  # Ignore deprecated fields like embedding_model
     )
 
     # XDG-compliant directories
@@ -498,8 +590,12 @@ class Settings(DefaultSettings):
                 toml_data = tomllib.load(f)
             if ignore_patterns := toml_data.get("ignore_patterns"):
                 self.ignore_patterns = ignore_patterns
-            if embedding_model := toml_data.get("embedding_model"):
-                self.embedding_model = embedding_model
+            # Handle embedding settings (new format with [embedding] section)
+            if embedding := toml_data.get("embedding"):
+                self.embedding = EmbeddingSettings(**embedding)
+            # Backward compatibility: old top-level embedding_model
+            elif embedding_model := toml_data.get("embedding_model"):
+                self.embedding = EmbeddingSettings(model=embedding_model)
             if max_file_size := toml_data.get("max_file_size"):
                 self.max_file_size = max_file_size
             if max_files := toml_data.get("max_files"):
@@ -699,7 +795,7 @@ class RepoSettings(DefaultSettings):
         elif Path(pyproject_path).exists():
             self.from_pyproject()
         else:
-            self.embedding_model = settings.embedding_model
+            self.embedding = settings.embedding.model_copy()
             self.ignore_patterns = settings.ignore_patterns
             self.max_file_size = settings.max_file_size
             self.max_files = settings.max_files
@@ -721,7 +817,14 @@ class RepoSettings(DefaultSettings):
         try:
             content = Path(toml_path).read_bytes()
             toml_data = tomllib.loads(content.decode("utf-8"))
-            self.embedding_model = toml_data.get("embedding_model", settings.embedding_model)
+            # Handle embedding settings
+            if embedding := toml_data.get("embedding"):
+                self.embedding = EmbeddingSettings(**embedding)
+            elif embedding_model := toml_data.get("embedding_model"):
+                # Backward compatibility with old top-level embedding_model
+                self.embedding = EmbeddingSettings(model=embedding_model)
+            else:
+                self.embedding = settings.embedding.model_copy()
             self.ignore_patterns = list(
                 set(toml_data.get("ignore_patterns", []) + settings.ignore_patterns)
             )
@@ -754,7 +857,14 @@ class RepoSettings(DefaultSettings):
             tool_indexter = data.get("tool", {}).get("indexter")
             if tool_indexter is None:
                 return None
-            self.embedding_model = tool_indexter.get("embedding_model", settings.embedding_model)
+            # Handle embedding settings
+            if embedding := tool_indexter.get("embedding"):
+                self.embedding = EmbeddingSettings(**embedding)
+            elif embedding_model := tool_indexter.get("embedding_model"):
+                # Backward compatibility with old top-level embedding_model
+                self.embedding = EmbeddingSettings(model=embedding_model)
+            else:
+                self.embedding = settings.embedding.model_copy()
             self.ignore_patterns = list(
                 set(tool_indexter.get("ignore_patterns", []) + settings.ignore_patterns)
             )

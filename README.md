@@ -83,6 +83,9 @@ indexter-rlm status
 | `indexter-rlm status` | Show all indexed repositories |
 | `indexter-rlm forget <name>` | Remove repository from index |
 | `indexter-rlm config show` | Show current configuration |
+| `indexter-rlm hook install` | Install git hook for auto-indexing |
+| `indexter-rlm hook uninstall` | Remove indexter-rlm git hooks |
+| `indexter-rlm hook status` | Show git hook status |
 
 ---
 
@@ -99,12 +102,24 @@ Indexter-RLM provides an MCP server for AI agent integration.
 | `read_file(name, path, start?, end?)` | Read file content with line numbers |
 | `get_symbols(name, path)` | List functions/classes in a file |
 
-### Planned Tools
+### Symbol Navigation Tools
 
 | Tool | Description |
 |------|-------------|
-| `store_note(key, content)` | Save observations (scratchpad) |
-| `get_notes()` | Retrieve accumulated context |
+| `find_references(name, symbol)` | Find all usages of a symbol with import chains |
+| `find_definition(name, symbol)` | Jump to where a symbol is defined |
+| `list_definitions(name, path)` | List all symbols defined in a file |
+
+### Scratchpad Tools
+
+| Tool | Description |
+|------|-------------|
+| `save_note(name, key, content)` | Save observations |
+| `retrieve_note(name, key)` | Get a single note |
+| `list_notes(name, tag?)` | List all notes |
+| `remove_note(name, key)` | Delete a note |
+| `remove_all_notes(name)` | Clear all notes |
+| `exploration_summary(name)` | Get session statistics |
 
 ### Cursor Integration
 
@@ -146,10 +161,13 @@ You MUST:
 Location: `~/.config/indexter/indexter.toml`
 
 ```toml
-embedding_model = "BAAI/bge-small-en-v1.5"
 max_file_size = 1048576  # 1 MB
 max_files = 1000
 top_k = 10
+
+[embedding]
+provider = "local"  # or "openai"
+model = "BAAI/bge-small-en-v1.5"
 
 [store]
 mode = "local"  # or "remote" or "memory"
@@ -157,6 +175,26 @@ mode = "local"  # or "remote" or "memory"
 [mcp]
 transport = "stdio"  # or "http"
 ```
+
+### Embedding Models
+
+| Provider | Model | Dimensions | Notes |
+|----------|-------|------------|-------|
+| local | `BAAI/bge-small-en-v1.5` | 384 | Default, fast |
+| local | `BAAI/bge-base-en-v1.5` | 768 | Better quality |
+| local | `BAAI/bge-large-en-v1.5` | 1024 | Best quality |
+| openai | `text-embedding-3-small` | 1536 | Fast, requires API key |
+| openai | `text-embedding-3-large` | 3072 | Best quality |
+
+To use OpenAI embeddings, set `OPENAI_API_KEY` environment variable:
+
+```toml
+[embedding]
+provider = "openai"
+model = "text-embedding-3-small"
+```
+
+**Note**: Changing the embedding model requires re-indexing (`indexter-rlm index <name> --full`).
 
 ### Per-Repository Settings
 
@@ -167,6 +205,30 @@ Create `indexter.toml` in your repo root, or add `[tool.indexter]` to `pyproject
 ignore_patterns = ["generated/", "vendor/"]
 max_files = 500
 ```
+
+### Git Hooks (Auto-Indexing)
+
+Keep the semantic index in sync with your repository automatically:
+
+```bash
+# Install post-commit hook (recommended - runs in background)
+indexter-rlm hook install /path/to/repo
+
+# Or use pre-push hook (batches multiple commits)
+indexter-rlm hook install /path/to/repo --type pre-push
+
+# Check hook status
+indexter-rlm hook status
+
+# Remove hooks
+indexter-rlm hook uninstall
+```
+
+| Hook Type | When It Runs | Blocking? | Best For |
+|-----------|--------------|-----------|----------|
+| `post-commit` | After each commit | No (background) | Daily development |
+| `pre-push` | Before pushing | Yes | Ensuring sync before sharing |
+| `pre-commit` | Before each commit | Yes | Strict sync (can slow commits) |
 
 ---
 

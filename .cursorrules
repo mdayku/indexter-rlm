@@ -1,8 +1,20 @@
 # Indexter-RLM Cursor Rules
 
-## Indexter Integration (Semantic Code Search)
+## The RLM Loop (MUST FOLLOW)
 
-For any task involving:
+Before reasoning about code, you MUST follow this loop:
+
+```
+1. SEARCH  -> Find relevant code via semantic search
+2. OPEN    -> Read the actual source files
+3. RECORD  -> Save observations as notes
+4. REFINE  -> Search again based on findings
+5. REPEAT  -> Until you have sufficient context
+```
+
+### Search-Before-Reasoning Enforcement
+
+For ANY task involving:
 - Understanding existing code
 - Modifying non-trivial logic
 - Debugging behavior
@@ -10,12 +22,37 @@ For any task involving:
 - Explaining system design
 
 You MUST:
-1. Query Indexter via MCP with a semantic search describing the intent.
-2. Review the returned code snippets before proposing changes.
-3. Cite the retrieved code in your reasoning.
+1. Query Indexter via `search_repository()` with a semantic search describing the intent
+2. Use `get_symbols()` to understand file structure before reading
+3. Use `read_file()` to inspect actual implementation
+4. Cite the retrieved code (file paths and line numbers) in your reasoning
 
-Do NOT rely on assumptions or prior messages as a substitute for Indexter results.
-If Indexter returns no results, state that explicitly.
+**DO NOT** rely on assumptions, memory, or prior messages as a substitute for search results.
+If search returns no results, state that explicitly and try alternative queries.
+
+### Note-Taking Requirements (Multi-Step Tasks)
+
+For tasks requiring 3+ steps or involving multiple files:
+
+1. **Before starting**: Create a note with your exploration plan
+   ```
+   save_note("repo", "plan", "1. Find auth logic 2. Trace token flow 3. Check expiry")
+   ```
+
+2. **During exploration**: Record key findings as you discover them
+   ```
+   save_note("repo", "auth_location", "JWT validation in src/auth/middleware.py:45-80")
+   ```
+
+3. **Before concluding**: Review accumulated notes
+   ```
+   list_notes("repo")
+   ```
+
+4. **After completion**: Clean up temporary notes
+   ```
+   remove_all_notes("repo")
+   ```
 
 ---
 
@@ -67,14 +104,15 @@ async def search_repo(
 
 1. **No broad refactors** without explicit user request
 2. **No new dependencies** without updating `pyproject.toml`
-3. **No changes to public models** (`Repo`, `RepoSettings`, `IndexResult`) without updating tests
+3. **No changes to public models** (`Repo`, `RepoSettings`, `IndexResult`, `Note`) without updating tests
 4. **Always add/update tests** when touching models, store, or MCP tools
 5. **Avoid new files** unless necessary; prefer extending existing modules
 
 **Critical modules** (require careful changes):
-- `src/indexter_rlm/models.py` - `Repo`, `IndexResult`
+- `src/indexter_rlm/models.py` - `Repo`, `IndexResult`, `Note`
 - `src/indexter_rlm/config.py` - `Settings`, `RepoSettings`
 - `src/indexter_rlm/mcp/server.py` - MCP tool definitions
+- `src/indexter_rlm/mcp/notes.py` - Note storage
 - `src/indexter_rlm/store.py` - Vector store operations
 
 ## Where to Add Things
@@ -110,4 +148,3 @@ When adding/modifying language parsers:
 - Keep `BACKLOG.md` focused on active work (current sprint)
 - `PRD.md` contains vision, architecture decisions, and changelog
 - `ARCHITECTURE.md` documents system design and data flow
-

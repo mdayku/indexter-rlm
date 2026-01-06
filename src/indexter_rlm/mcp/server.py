@@ -11,13 +11,35 @@ from fastmcp import FastMCP
 
 from indexter_rlm.config import settings
 
-from .prompts import get_search_workflow
-from .tools import get_file, list_repos, list_symbols, search_repo
+from .prompts import (
+    get_cursorrules,
+    get_debug_workflow,
+    get_refactor_workflow,
+    get_search_workflow,
+)
+from .tools import (
+    clear_notes,
+    delete_note,
+    find_symbol_definition,
+    find_symbol_references,
+    get_exploration_summary,
+    get_file,
+    get_note,
+    get_notes,
+    list_file_symbols,
+    list_repos,
+    list_symbols,
+    search_repo,
+    store_note,
+)
 
 # Create the MCP server
 mcp = FastMCP(
     "indexter-rlm",
-    instructions="RLM-style context environment for coding agents - recursive navigation over semantic code",
+    instructions=(
+        "RLM-style context environment for coding agents - "
+        "recursive navigation over semantic code"
+    ),
 )
 
 
@@ -123,10 +145,237 @@ async def get_symbols(
     return await list_symbols(name=name, file_path=file_path)
 
 
+# =============================================================================
+# Note Tools (Scratchpad)
+# =============================================================================
+
+
+@mcp.tool()
+async def save_note(
+    name: str,
+    key: str,
+    content: str,
+    tags: list[str] | None = None,
+) -> dict:
+    """
+    Store a note in the repository's scratchpad.
+
+    Use this to record observations, hypotheses, and findings during
+    code exploration. Notes persist across sessions and can be tagged
+    for organization.
+
+    Args:
+        name: The repository name.
+        key: Unique identifier for the note (overwrites if exists).
+        content: The note content.
+        tags: Optional list of tags for categorization.
+
+    Returns the stored note with metadata.
+    """
+    return await store_note(name=name, key=key, content=content, tags=tags)
+
+
+@mcp.tool()
+async def retrieve_note(
+    name: str,
+    key: str,
+) -> dict:
+    """
+    Retrieve a single note by key.
+
+    Args:
+        name: The repository name.
+        key: The note key to retrieve.
+
+    Returns the note content and metadata.
+    """
+    return await get_note(name=name, key=key)
+
+
+@mcp.tool()
+async def list_notes(
+    name: str,
+    tag: str | None = None,
+) -> dict:
+    """
+    List all notes for a repository.
+
+    Use this to review accumulated observations and findings.
+    Notes are sorted by most recently updated.
+
+    Args:
+        name: The repository name.
+        tag: Optional tag to filter notes by.
+
+    Returns list of notes with metadata.
+    """
+    return await get_notes(name=name, tag=tag)
+
+
+@mcp.tool()
+async def remove_note(
+    name: str,
+    key: str,
+) -> dict:
+    """
+    Delete a note by key.
+
+    Args:
+        name: The repository name.
+        key: The note key to delete.
+
+    Returns confirmation of deletion.
+    """
+    return await delete_note(name=name, key=key)
+
+
+@mcp.tool()
+async def remove_all_notes(
+    name: str,
+) -> dict:
+    """
+    Delete all notes for a repository.
+
+    Use this to clear the scratchpad and start fresh.
+
+    Args:
+        name: The repository name.
+
+    Returns count of deleted notes.
+    """
+    return await clear_notes(name=name)
+
+
+# =============================================================================
+# Exploration Session
+# =============================================================================
+
+
+@mcp.tool()
+async def exploration_summary(
+    name: str,
+) -> dict:
+    """
+    Get a summary of the current exploration session.
+
+    Returns statistics about tool calls, searches performed, and files read
+    during the current session. Use this to review your exploration progress.
+
+    Args:
+        name: The repository name.
+
+    Returns session statistics including tool counts, search queries, and files read.
+    """
+    return await get_exploration_summary(name=name)
+
+
+# =============================================================================
+# Symbol Navigation Tools
+# =============================================================================
+
+
+@mcp.tool()
+async def find_references(
+    name: str,
+    symbol_name: str,
+    include_imports: bool = True,
+) -> dict:
+    """
+    Find all references to a symbol across the repository.
+
+    Use this tool to understand how a symbol (function, class, constant) is used
+    throughout the codebase. Returns definitions, usages, and import chains.
+
+    Args:
+        name: The repository name.
+        symbol_name: Name of the symbol to find references for.
+        include_imports: Include transitive import chains (default True).
+
+    Returns definitions, references, and import chains for the symbol.
+    """
+    return await find_symbol_references(
+        name=name,
+        symbol_name=symbol_name,
+        include_imports=include_imports,
+    )
+
+
+@mcp.tool()
+async def find_definition(
+    name: str,
+    symbol_name: str,
+) -> dict:
+    """
+    Find where a symbol is defined.
+
+    Use this tool to jump to the definition of a function, class, or constant.
+
+    Args:
+        name: The repository name.
+        symbol_name: Name of the symbol to find.
+
+    Returns the definition location(s) with file path, line, and documentation.
+    """
+    return await find_symbol_definition(name=name, symbol_name=symbol_name)
+
+
+@mcp.tool()
+async def list_definitions(
+    name: str,
+    file_path: str,
+) -> dict:
+    """
+    List all symbol definitions in a file.
+
+    Use this tool to get an overview of what's defined in a file.
+    More detailed than get_symbols - includes qualified names.
+
+    Args:
+        name: The repository name.
+        file_path: Path to the file relative to repository root.
+
+    Returns list of symbols with names, types, lines, and signatures.
+    """
+    return await list_file_symbols(name=name, file_path=file_path)
+
+
+# =============================================================================
+# Prompts
+# =============================================================================
+
+
 @mcp.prompt()
 def search_workflow() -> str:
     """Guide for effectively searching Indexter-configured code repositories."""
     return get_search_workflow()
+
+
+@mcp.prompt()
+def debug_workflow() -> str:
+    """Guide for debugging code using the RLM exploration loop."""
+    return get_debug_workflow()
+
+
+@mcp.prompt()
+def refactor_workflow() -> str:
+    """Guide for safely refactoring code with full context awareness."""
+    return get_refactor_workflow()
+
+
+# =============================================================================
+# Resources
+# =============================================================================
+
+
+@mcp.resource("cursorrules://indexter-rlm")
+def cursorrules_resource() -> str:
+    """
+    Agent rules for RLM-style code exploration.
+
+    Copy this content to your .cursorrules file to enforce the RLM loop
+    in your AI coding assistant.
+    """
+    return get_cursorrules()
 
 
 def run_server() -> None:

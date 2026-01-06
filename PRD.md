@@ -157,7 +157,52 @@ This is recursion over **context**, not tokens.
 
 ## Changelog
 
-### 2026-01-06
+### 2026-01-06 (Git Hooks Feature)
+- Added `indexter-rlm hook install` command
+- Added `indexter-rlm hook uninstall` command
+- Added `indexter-rlm hook status` command
+- Support for post-commit (background), pre-push, and pre-commit hooks
+- Automatic backup of existing hooks
+
+### 2026-01-06 (Epic 4: Embedding Model Options)
+- Added `embedding.provider` config option (`local` | `openai`)
+- Added `embedding.model` config for model selection
+- Created `embeddings.py` with `LocalEmbedder` and `OpenAIEmbedder` classes
+- Support local: bge-small/base/large (384/768/1024 dims)
+- Support OpenAI: text-embedding-3-small/large (1536/3072 dims)
+- Fallback to local FastEmbed if no OpenAI API key
+- Added `openai` as optional dependency
+
+### 2026-01-06 (Epic 5: Find References)
+- Created `symbols.py` with SymbolIndex, SymbolDefinition, SymbolReference, ImportRelation models
+- Created `symbol_extractor.py` for Python AST-based symbol extraction
+- Implemented semantic reference tracking (definitions, usages, call sites, imports)
+- Added `find_references` MCP tool - find all usages of a symbol with import chains
+- Added `find_definition` MCP tool - jump to symbol definition
+- Added `list_definitions` MCP tool - list all symbols in a file
+- Per-repo symbol index at `~/.config/indexter/symbols/{repo}.json`
+- 28 tests for symbol index and extractor, 7 tests for MCP tools
+
+### 2026-01-06 (Epic 3: Recursive Controller)
+- Enhanced `.cursorrules` with RLM loop enforcement
+- Added `DEBUG_WORKFLOW_PROMPT` for debugging tasks
+- Added `REFACTOR_WORKFLOW_PROMPT` for refactoring tasks
+- Added MCP resource `cursorrules://indexter-rlm` for agent rules
+- Created `ExplorationLogger` with JSON Lines logging
+- Added `exploration_summary` MCP tool
+- Logs stored at `~/.config/indexter/logs/{repo}/exploration_{timestamp}.jsonl`
+- Fixed pre-existing test failures from fork (module name patches)
+
+### 2026-01-06 (Epic 2: Stateful Context)
+- Added note tools: `save_note`, `retrieve_note`, `list_notes`, `remove_note`, `remove_all_notes`
+- Per-repo JSON persistence at `~/.config/indexter/notes/{repo}.json`
+- Added `Note` model with key, content, tags, timestamps
+
+### 2026-01-06 (Epic 1: Navigation Tools)
+- Added `read_file` tool with line range filtering
+- Added `get_symbols` tool leveraging tree-sitter parsers
+
+### 2026-01-06 (Initial Fork)
 - Forked from Indexter v0.1.0
 - Renamed to indexter-rlm
 - Updated Python requirement to >=3.10

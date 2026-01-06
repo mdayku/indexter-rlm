@@ -16,13 +16,15 @@ jobs:
         uses: astral-sh/setup-uv@v7
       
       - name: Set up Python
-        run: uv python install 3.13
+        run: uv python install 3.12
       
       - name: Build package
         run: uv build
       
       - name: Smoke test (wheel)
-        run: uv run --isolated --no-project --with dist/*.whl python -c "import indexter; print(f'indexter v{indexter.__version__}')"
+        run: |
+          uv run --isolated --no-project --with dist/*.whl \
+            python -c "import indexter_rlm; print(f'indexter-rlm v{indexter_rlm.__version__}')"
       
       - name: Upload distributions
         uses: actions/upload-artifact@v4
@@ -37,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/indexter
+      url: https://test.pypi.org/p/indexter-rlm
     permissions:
       id-token: write
     steps:
@@ -60,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/indexter
+      url: https://pypi.org/p/indexter-rlm
     permissions:
       id-token: write
     steps:

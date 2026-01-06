@@ -15,10 +15,10 @@ def test_mcp_server_exists():
 
 def test_mcp_server_name():
     """Test that the MCP server has the correct name."""
-    assert mcp.name == "indexter"
+    assert mcp.name == "indexter-rlm"
 
 
-@patch("indexter.mcp.server.settings")
+@patch("indexter_rlm.mcp.server.settings")
 def test_run_server_stdio_transport(mock_settings):
     """Test run_server function with stdio transport."""
     from indexter_rlm.mcp.server import run_server
@@ -30,7 +30,7 @@ def test_run_server_stdio_transport(mock_settings):
         mock_run.assert_called_once_with(transport="stdio")
 
 
-@patch("indexter.mcp.server.settings")
+@patch("indexter_rlm.mcp.server.settings")
 def test_run_server_http_transport(mock_settings):
     """Test run_server function with http transport."""
     from indexter_rlm.mcp.server import run_server
@@ -44,7 +44,7 @@ def test_run_server_http_transport(mock_settings):
         mock_run.assert_called_once_with(transport="http", host="0.0.0.0", port=3000)
 
 
-@patch("indexter.mcp.server.settings")
+@patch("indexter_rlm.mcp.server.settings")
 def test_run_server_custom_http_config(mock_settings):
     """Test run_server function with custom http configuration."""
     from indexter_rlm.mcp.server import run_server
@@ -128,16 +128,20 @@ async def test_mcp_server_expected_tool_count(mcp_client):
     """Test that MCP server has expected number of tools."""
     tools = await mcp_client.list_tools()
 
-    # Should have exactly 2 tools (list_repositories, search_repository)
-    assert len(tools) == 2
+    # Should have 13 tools:
+    # - list_repositories, search_repository, read_file, get_symbols
+    # - save_note, retrieve_note, list_notes, remove_note, remove_all_notes
+    # - exploration_summary
+    # - find_references, find_definition, list_definitions
+    assert len(tools) == 13
 
 
 async def test_mcp_server_expected_prompt_count(mcp_client):
     """Test that MCP server has expected number of prompts."""
     prompts = await mcp_client.list_prompts()
 
-    # Should have exactly 1 prompt (search_workflow)
-    assert len(prompts) == 1
+    # Should have 3 prompts: search_workflow, debug_workflow, refactor_workflow
+    assert len(prompts) == 3
 
 
 # Tool Schema Validation

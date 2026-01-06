@@ -388,7 +388,7 @@ async def test_repo_remove_existing(tmp_path):
 
     with patch.object(RepoSettings, "load", new=AsyncMock(return_value=[settings])):
         with patch.object(RepoSettings, "save", new=AsyncMock()) as mock_save:
-            with patch("indexter.models.store") as mock_store:
+            with patch("indexter_rlm.models.store") as mock_store:
                 mock_store.delete_collection = AsyncMock()
 
                 result = await Repo.remove("test_repo")
@@ -430,7 +430,7 @@ async def test_repo_remove_race_condition(tmp_path):
 
     with patch.object(RepoSettings, "load", new=mock_load):
         with patch.object(RepoSettings, "save", new=AsyncMock()) as mock_save:
-            with patch("indexter.models.store") as mock_store:
+            with patch("indexter_rlm.models.store") as mock_store:
                 mock_store.delete_collection = AsyncMock()
 
                 result = await Repo.remove("test_repo")
@@ -460,7 +460,7 @@ async def test_repo_remove_keeps_other_repos(tmp_path):
         RepoSettings, "load", new=AsyncMock(return_value=[settings1, settings2, settings3])
     ):
         with patch.object(RepoSettings, "save", new=AsyncMock()) as mock_save:
-            with patch("indexter.models.store") as mock_store:
+            with patch("indexter_rlm.models.store") as mock_store:
                 mock_store.delete_collection = AsyncMock()
 
                 await Repo.remove("repo2")
@@ -492,7 +492,7 @@ async def test_repo_get_document_hashes(temp_git_repo):
         for doc in mock_docs:
             yield doc
 
-    with patch("indexter.models.Walker") as mock_walker_class:
+    with patch("indexter_rlm.models.Walker") as mock_walker_class:
         mock_walker = MagicMock()
         mock_walker.walk = mock_walk
         mock_walker_class.return_value = mock_walker
@@ -519,7 +519,7 @@ async def test_repo_search_basic(temp_git_repo):
 
     expected_results = [{"content": "result1"}, {"content": "result2"}]
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.search = AsyncMock(return_value=expected_results)
 
         results = await repo.search("test query", limit=5)
@@ -543,7 +543,7 @@ async def test_repo_search_with_filters(temp_git_repo):
     settings = RepoSettings(path=temp_git_repo)
     repo = Repo(settings=settings)
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.search = AsyncMock(return_value=[])
 
         await repo.search(
@@ -604,12 +604,12 @@ async def test_repo_status(temp_git_repo):
                 "hash": hash,
             }
 
-    with patch("indexter.models.Walker") as mock_walker_class:
+    with patch("indexter_rlm.models.Walker") as mock_walker_class:
         mock_walker = MagicMock()
         mock_walker.walk = mock_walk
         mock_walker_class.return_value = mock_walker
 
-        with patch("indexter.models.store") as mock_store:
+        with patch("indexter_rlm.models.store") as mock_store:
             mock_store.get_document_hashes = AsyncMock(return_value=stored_hashes)
             mock_store.count_nodes = AsyncMock(return_value=42)
 
@@ -634,13 +634,13 @@ async def test_repo_index_full_sync(temp_git_repo):
     settings = RepoSettings(path=temp_git_repo)
     repo = Repo(settings=settings)
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.delete_collection = AsyncMock()
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
 
             async def mock_walk():
@@ -693,17 +693,17 @@ async def test_repo_index_new_file(temp_git_repo):
         )
     ]
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
 
-            with patch("indexter.models.get_parser", return_value=mock_parser):
+            with patch("indexter_rlm.models.get_parser", return_value=mock_parser):
                 result = await repo.index()
 
                 assert result.files_checked == 1
@@ -751,18 +751,18 @@ async def test_repo_index_modified_file(temp_git_repo):
         )
     ]
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={"modified.py": "oldhash"})
         mock_store.delete_by_document_paths = AsyncMock()
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
 
-            with patch("indexter.models.get_parser", return_value=mock_parser):
+            with patch("indexter_rlm.models.get_parser", return_value=mock_parser):
                 result = await repo.index()
 
                 assert result.files_checked == 1
@@ -789,12 +789,12 @@ async def test_repo_index_deleted_file(temp_git_repo):
         return
         yield  # Empty generator - no files walked
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={"deleted.py": "oldhash"})
         mock_store.delete_by_document_paths = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
@@ -828,12 +828,12 @@ async def test_repo_index_unchanged_file(temp_git_repo):
     async def mock_walk():
         yield mock_doc
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={"unchanged.py": "samehash"})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
@@ -891,17 +891,17 @@ async def test_repo_index_respects_max_files(temp_git_repo):
         )
     ]
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
 
-            with patch("indexter.models.get_parser", return_value=mock_parser):
+            with patch("indexter_rlm.models.get_parser", return_value=mock_parser):
                 result = await repo.index()
 
                 assert result.files_checked == 5
@@ -931,17 +931,17 @@ async def test_repo_index_parser_error(temp_git_repo):
     mock_parser = MagicMock()
     mock_parser.parse.side_effect = Exception("Parse error!")
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
 
-            with patch("indexter.models.get_parser", return_value=mock_parser):
+            with patch("indexter_rlm.models.get_parser", return_value=mock_parser):
                 result = await repo.index()
 
                 assert result.files_checked == 1
@@ -968,17 +968,17 @@ async def test_repo_index_no_parser_available(temp_git_repo):
     async def mock_walk():
         yield mock_doc
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
 
-            with patch("indexter.models.get_parser", return_value=None):
+            with patch("indexter_rlm.models.get_parser", return_value=None):
                 result = await repo.index()
 
                 assert result.files_checked == 1
@@ -1027,17 +1027,17 @@ async def test_repo_index_batching(temp_git_repo):
         )
     ]
 
-    with patch("indexter.models.store") as mock_store:
+    with patch("indexter_rlm.models.store") as mock_store:
         mock_store.ensure_collection = AsyncMock()
         mock_store.get_document_hashes = AsyncMock(return_value={})
         mock_store.upsert_nodes = AsyncMock()
 
-        with patch("indexter.models.Walker") as mock_walker_class:
+        with patch("indexter_rlm.models.Walker") as mock_walker_class:
             mock_walker = MagicMock()
             mock_walker.walk = mock_walk
             mock_walker_class.return_value = mock_walker
 
-            with patch("indexter.models.get_parser", return_value=mock_parser):
+            with patch("indexter_rlm.models.get_parser", return_value=mock_parser):
                 result = await repo.index()
 
                 # Should be called twice: once for batch of 2, once for remaining 1

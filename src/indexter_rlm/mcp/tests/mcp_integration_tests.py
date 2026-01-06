@@ -132,7 +132,7 @@ async def test_tool_list_repositories_success(
     )
 
     with patch(
-        "indexter.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
+        "indexter_rlm.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
     ):
         result = await mcp_client.call_tool(name="list_repositories", arguments={})
 
@@ -142,7 +142,7 @@ async def test_tool_list_repositories_success(
 
 async def test_tool_list_repositories_empty(mcp_client: Client[FastMCPTransport]):
     """Test listing repositories when none are configured."""
-    with patch("indexter.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=[]):
+    with patch("indexter_rlm.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=[]):
         result = await mcp_client.call_tool(name="list_repositories", arguments={})
 
     assert result.data is not None
@@ -199,7 +199,7 @@ async def test_tool_search_basic_success(
     mock_repo_instance.index = AsyncMock()
     mock_repo_instance.search = AsyncMock(return_value=search_results)
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         result = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -248,7 +248,7 @@ async def test_tool_search_with_filters(
     mock_repo_instance.index = AsyncMock()
     mock_repo_instance.search = AsyncMock(return_value=search_results)
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         result = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -294,7 +294,7 @@ async def test_tool_search_node_name_filter(
     mock_repo_instance.index = AsyncMock()
     mock_repo_instance.search = AsyncMock(return_value=search_results)
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         result = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -315,7 +315,7 @@ async def test_tool_search_node_name_filter(
 async def test_tool_search_repo_not_found(mcp_client: Client[FastMCPTransport]):
     """Test searching non-existent repository."""
     with patch(
-        "indexter.mcp.tools.Repo.get",
+        "indexter_rlm.mcp.tools.Repo.get",
         side_effect=RepoNotFoundError("Repository not found: missing-repo"),
     ):
         result = await mcp_client.call_tool(
@@ -339,7 +339,7 @@ async def test_tool_search_empty_results(
     mock_repo_instance.index = AsyncMock()
     mock_repo_instance.search = AsyncMock(return_value=[])
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         result = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -407,7 +407,7 @@ async def test_full_user_journey_list_index_search(
     )
 
     with patch(
-        "indexter.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
+        "indexter_rlm.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
     ):
         repos_result = await mcp_client.call_tool(name="list_repositories", arguments={})
 
@@ -433,7 +433,7 @@ async def test_full_user_journey_list_index_search(
     mock_repo_instance.index = AsyncMock()
     mock_repo_instance.search = AsyncMock(return_value=search_results)
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         search_response = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -476,7 +476,7 @@ async def test_full_journey_check_status_before_search(
     )
 
     with patch(
-        "indexter.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
+        "indexter_rlm.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
     ):
         list_result = await mcp_client.call_tool(name="list_repositories", arguments={})
 
@@ -489,7 +489,7 @@ async def test_full_journey_check_status_before_search(
     mock_repo_instance.index = AsyncMock()
     mock_repo_instance.search = AsyncMock(return_value=search_results)
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         search_response = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -509,7 +509,7 @@ async def test_error_recovery_workflow(
     """Test workflow with error recovery: search fails → list repos → retry."""
     # Step 1: Attempt search on non-existent repo
     with patch(
-        "indexter.mcp.tools.Repo.get",
+        "indexter_rlm.mcp.tools.Repo.get",
         side_effect=RepoNotFoundError("Repository not found: wrong-name"),
     ):
         search_result = await mcp_client.call_tool(
@@ -545,7 +545,7 @@ async def test_error_recovery_workflow(
     )
 
     with patch(
-        "indexter.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
+        "indexter_rlm.mcp.tools.Repo.list", new_callable=AsyncMock, return_value=sample_repos_list
     ):
         repos_result = await mcp_client.call_tool(name="list_repositories", arguments={})
 
@@ -561,7 +561,7 @@ async def test_error_recovery_workflow(
     mock_repo.index = AsyncMock()
     mock_repo.search = AsyncMock(return_value=[])
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo):
         retry_result = await mcp_client.call_tool(
             name="search_repository",
             arguments={
@@ -625,7 +625,7 @@ async def test_search_with_various_filters(
     if node_type:
         args["node_type"] = node_type
 
-    with patch("indexter.mcp.tools.Repo.get", return_value=mock_repo_instance):
+    with patch("indexter_rlm.mcp.tools.Repo.get", return_value=mock_repo_instance):
         result = await mcp_client.call_tool(name="search_repository", arguments=args)
 
     assert result.data["count"] == expected_count

@@ -50,7 +50,7 @@ def test_config_show_with_existing_config_file(cli_runner):
     mock_config_file.read_text.return_value = config_content
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         result = cli_runner.invoke(config_app, ["show"])
@@ -69,7 +69,7 @@ def test_config_show_when_config_file_not_found(cli_runner):
     mock_config_file.exists.return_value = False
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         result = cli_runner.invoke(config_app, ["show"])
@@ -89,10 +89,10 @@ def test_config_show_displays_syntax_highlighting(cli_runner):
     mock_config_file.read_text.return_value = config_content
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
-        with patch("indexter.cli.config.Syntax") as mock_syntax:
+        with patch("indexter_rlm.cli.config.Syntax") as mock_syntax:
             mock_syntax_instance = MagicMock()
             mock_syntax.return_value = mock_syntax_instance
 
@@ -110,7 +110,7 @@ def test_config_path_outputs_plain_text(cli_runner):
     mock_config_file = MagicMock(spec=Path)
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         result = cli_runner.invoke(config_app, ["path"])
@@ -126,11 +126,11 @@ def test_config_path_uses_print_not_console(cli_runner, capsys):
     mock_config_file = MagicMock(spec=Path)
     mock_config_file.__str__ = Mock(return_value="/tmp/test/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         # Call the function directly to verify it uses print()
-        with patch("indexter.cli.config.print") as mock_print:
+        with patch("indexter_rlm.cli.config.print") as mock_print:
             config_path()
             mock_print.assert_called_once_with(mock_config_file)
 
@@ -142,7 +142,7 @@ def test_config_show_handles_read_error(cli_runner):
     mock_config_file.read_text.side_effect = OSError("Permission denied")
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         # Should raise the exception since we're not catching it
@@ -195,7 +195,7 @@ def test_config_show_with_unicode_content(cli_runner):
     mock_config_file.read_text.return_value = config_content
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         result = cli_runner.invoke(config_app, ["show"])
@@ -212,7 +212,7 @@ def test_config_show_with_long_path(cli_runner):
     mock_config_file.exists.return_value = False
     mock_config_file.__str__ = Mock(return_value=long_path)
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         result = cli_runner.invoke(config_app, ["show"])
@@ -229,7 +229,7 @@ def test_config_show_empty_config_file(cli_runner):
     mock_config_file.read_text.return_value = ""
     mock_config_file.__str__ = Mock(return_value="/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         result = cli_runner.invoke(config_app, ["show"])
@@ -242,7 +242,7 @@ def test_config_path_with_pathlib_path(cli_runner):
     """Test config path handles Path objects correctly."""
     test_path = Path("/home/user/.config/indexter/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = test_path
 
         result = cli_runner.invoke(config_app, ["path"])
@@ -260,7 +260,7 @@ def test_config_show_console_instance(cli_runner):
     mock_config_file.exists.return_value = False
     mock_config_file.__str__ = Mock(return_value="/test/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
         with patch.object(console, "print") as mock_console_print:
@@ -279,10 +279,10 @@ def test_config_show_syntax_theme_is_monokai(cli_runner):
     mock_config_file.read_text.return_value = config_content
     mock_config_file.__str__ = Mock(return_value="/test/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
-        with patch("indexter.cli.config.Syntax") as mock_syntax:
+        with patch("indexter_rlm.cli.config.Syntax") as mock_syntax:
             result = cli_runner.invoke(config_app, ["show"])
 
             assert result.exit_code == 0
@@ -300,10 +300,10 @@ def test_config_show_has_line_numbers(cli_runner):
     mock_config_file.read_text.return_value = config_content
     mock_config_file.__str__ = Mock(return_value="/test/indexter.toml")
 
-    with patch("indexter.cli.config.settings") as mock_settings:
+    with patch("indexter_rlm.cli.config.settings") as mock_settings:
         mock_settings.config_file = mock_config_file
 
-        with patch("indexter.cli.config.Syntax") as mock_syntax:
+        with patch("indexter_rlm.cli.config.Syntax") as mock_syntax:
             result = cli_runner.invoke(config_app, ["show"])
 
             assert result.exit_code == 0

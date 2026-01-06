@@ -1,15 +1,16 @@
 import json
 import os
-import tomllib
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import tomllib
 from pydantic import ValidationError
 
 from indexter_rlm.config import (
     CONFIG_FILENAME,
     DEFAULT_IGNORE_PATTERNS,
+    EmbeddingSettings,
     MCPSettings,
     MCPTransport,
     RepoSettings,
@@ -79,9 +80,9 @@ def test_get_config_dir_uses_xdg_config_home():
 
 def test_get_config_dir_defaults_to_home_config():
     """Test get_config_dir defaults to ~/.config/indexter."""
-    with patch.dict(os.environ, {}, clear=True):
-        # Remove XDG_CONFIG_HOME if it exists
-        os.environ.pop("XDG_CONFIG_HOME", None)
+    # Temporarily remove XDG_CONFIG_HOME to test default behavior
+    env_without_xdg = {k: v for k, v in os.environ.items() if k != "XDG_CONFIG_HOME"}
+    with patch.dict(os.environ, env_without_xdg, clear=True):
         result = get_config_dir()
         expected = Path.home() / ".config" / "indexter"
         assert result == expected
@@ -96,8 +97,9 @@ def test_get_data_dir_uses_xdg_data_home():
 
 def test_get_data_dir_defaults_to_home_local_share():
     """Test get_data_dir defaults to ~/.local/share/indexter."""
-    with patch.dict(os.environ, {}, clear=True):
-        os.environ.pop("XDG_DATA_HOME", None)
+    # Temporarily remove XDG_DATA_HOME to test default behavior
+    env_without_xdg = {k: v for k, v in os.environ.items() if k != "XDG_DATA_HOME"}
+    with patch.dict(os.environ, env_without_xdg, clear=True):
         result = get_data_dir()
         expected = Path.home() / ".local" / "share" / "indexter"
         assert result == expected
@@ -510,10 +512,15 @@ def test_repo_settings_collection_name_property(tmp_path):
 def test_repo_settings_inherits_global_defaults(tmp_path):
     """Test RepoSettings inherits defaults from global settings when no config exists."""
     # We need to patch the global settings before creating RepoSettings
-    with patch("indexter.config.settings") as mock_settings:
-        mock_settings.embedding_model = "test/model"
+    with patch("indexter_rlm.config.settings") as mock_settings:
+        # Create a proper EmbeddingSettings for the mock
+        mock_embedding = EmbeddingSettings(model="test/model")
+        mock_settings.embedding = mock_embedding
         mock_settings.ignore_patterns = [".test/"]
         mock_settings.max_file_size = 999
+        mock_settings.max_files = 500
+        mock_settings.top_k = 5
+        mock_settings.upsert_batch_size = 50
 
         # Create a git repo without config
         git_repo = tmp_path / "test-repo"
@@ -760,7 +767,7 @@ def test_repo_settings_empty_local_patterns_uses_global(tmp_path):
 async def test_repo_settings_load_empty_file(tmp_path):
     """Test RepoSettings.load returns empty list when repos.json doesn't exist."""
     # Mock settings to use our tmp directory
-    with patch("indexter.config.settings") as mock_settings:
+    with patch("indexter_rlm.config.settings") as mock_settings:
         mock_settings.repos_config_file = tmp_path / "repos.json"
 
         repos = await RepoSettings.load()
@@ -791,14 +798,14 @@ async def test_repo_settings_load_valid_repos(tmp_path):
     # Create a mock settings object with proper attributes
     mock_settings = MagicMock()
     mock_settings.repos_config_file = repos_file
-    mock_settings.embedding_model = "test/model"
+    mock_settings.embedding = EmbeddingSettings(model="test/model")
     mock_settings.ignore_patterns = [".test/"]
     mock_settings.max_file_size = 1024
     mock_settings.max_files = 100
     mock_settings.top_k = 5
     mock_settings.upsert_batch_size = 50
 
-    with patch("indexter.config.settings", mock_settings):
+    with patch("indexter_rlm.config.settings", mock_settings):
         repos = await RepoSettings.load()
 
         assert len(repos) == 2
@@ -815,7 +822,7 @@ async def test_repo_settings_load_handles_errors(tmp_path, caplog):
     mock_settings = MagicMock()
     mock_settings.repos_config_file = repos_file
 
-    with patch("indexter.config.settings", mock_settings):
+    with patch("indexter_rlm.config.settings", mock_settings):
         with caplog.at_level("ERROR"):
             repos = await RepoSettings.load()
 
@@ -839,14 +846,14 @@ async def test_repo_settings_save(tmp_path):
     # Create a mock settings object with proper attributes
     mock_settings = MagicMock()
     mock_settings.repos_config_file = repos_file
-    mock_settings.embedding_model = "test/model"
+    mock_settings.embedding = EmbeddingSettings(model="test/model")
     mock_settings.ignore_patterns = [".test/"]
     mock_settings.max_file_size = 1024
     mock_settings.max_files = 100
     mock_settings.top_k = 5
     mock_settings.upsert_batch_size = 50
 
-    with patch("indexter.config.settings", mock_settings):
+    with patch("indexter_rlm.config.settings", mock_settings):
         repo_settings1 = RepoSettings(path=repo1)
         repo_settings2 = RepoSettings(path=repo2)
 
@@ -872,7 +879,7 @@ async def test_repo_settings_save_handles_errors(tmp_path, caplog):
     mock_settings = MagicMock()
     mock_settings.repos_config_file = repos_file
 
-    with patch("indexter.config.settings", mock_settings):
+    with patch("indexter_rlm.config.settings", mock_settings):
         with caplog.at_level("ERROR"):
             await RepoSettings.save([])
 

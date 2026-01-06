@@ -255,7 +255,8 @@ from typing import TYPE_CHECKING
 
 from qdrant_client import AsyncQdrantClient, models
 
-from .config import StoreMode, settings
+from .config import EmbeddingProvider, StoreMode, settings
+from .embeddings import get_cached_embedder
 
 if TYPE_CHECKING:
     from indexter_rlm.models import Node
@@ -264,7 +265,10 @@ logger = logging.getLogger(__name__)
 
 
 class VectorStore:
-    """Qdrant vector store with fastembed embeddings."""
+    """Qdrant vector store with support for multiple embedding providers."""
+
+    # Default vector field name for OpenAI embeddings
+    OPENAI_VECTOR_NAME = "openai"
 
     def __init__(self):
         """Initialize the vector store."""
@@ -272,6 +276,7 @@ class VectorStore:
         self._embedding_model_name: str | None = None
         self._initialized_collections: set[str] = set()
         self._vector_name: str | None = None
+        self._use_openai: bool = False
 
     @property
     def client(self) -> AsyncQdrantClient:
@@ -302,31 +307,59 @@ class VectorStore:
                     api_key=settings.store.api_key,
                 )
 
-            # Set the embedding model for fastembed
-            self._client.set_model(settings.embedding_model)
-            self._embedding_model_name = settings.embedding_model
-            # Get the vector name used by fastembed (e.g., 'fast-bge-small-en-v1.5')
-            if self._vector_name is None:
+            # Determine embedding provider
+            self._use_openai = settings.embedding.provider == EmbeddingProvider.openai
+            self._embedding_model_name = settings.embedding.model
+
+            if self._use_openai:
+                # OpenAI embeddings - use manual vector handling
+                self._vector_name = self.OPENAI_VECTOR_NAME
+                logger.info(
+                    f"Using OpenAI embeddings: {self._embedding_model_name} "
+                    f"({settings.embedding.get_model_dims()} dims)"
+                )
+            else:
+                # Local FastEmbed - use Qdrant's built-in fastembed
+                self._client.set_model(settings.embedding_model)
+                # Get the vector name used by fastembed (e.g., 'fast-bge-small-en-v1.5')
                 vector_params = self._client.get_fastembed_vector_params()
                 self._vector_name = list(vector_params.keys())[0]
-            logger.info(
-                f"Using embedding model (async): {self._embedding_model_name} "
-                f"(vector: {self._vector_name})"
-            )
+                logger.info(
+                    f"Using FastEmbed model: {self._embedding_model_name} "
+                    f"(vector: {self._vector_name})"
+                )
         return self._client
 
     async def create_collection(self, collection_name: str) -> None:
-        """Create a collection in the vector store using fastembed vector params.
+        """Create a collection in the vector store.
+
+        Uses FastEmbed vector params for local embeddings, or configures
+        manual vector dimensions for OpenAI embeddings.
 
         Args:
             collection_name: Name of the collection to create.
         """
-        vector_params = self.client.get_fastembed_vector_params()
-        await self.client.create_collection(
-            collection_name=collection_name,
-            vectors_config=vector_params,
-        )
-        logger.info(f"Created collection: {collection_name}")
+        if self._use_openai:
+            # OpenAI: create with explicit vector dimensions
+            dims = settings.embedding.get_model_dims()
+            await self.client.create_collection(
+                collection_name=collection_name,
+                vectors_config={
+                    self.OPENAI_VECTOR_NAME: models.VectorParams(
+                        size=dims,
+                        distance=models.Distance.COSINE,
+                    )
+                },
+            )
+            logger.info(f"Created collection: {collection_name} (OpenAI, {dims} dims)")
+        else:
+            # Local FastEmbed: use built-in vector params
+            vector_params = self.client.get_fastembed_vector_params()
+            await self.client.create_collection(
+                collection_name=collection_name,
+                vectors_config=vector_params,
+            )
+            logger.info(f"Created collection: {collection_name} (FastEmbed)")
 
     async def delete_collection(self, collection_name: str) -> None:
         """Drop a collection from the vector store.
@@ -417,7 +450,9 @@ class VectorStore:
         collection_name: str,
         nodes: list[Node],
     ) -> int:
-        """Upsert nodes to a collection using fastembed for embeddings.
+        """Upsert nodes to a collection.
+
+        Uses FastEmbed for local embeddings or OpenAI API for OpenAI embeddings.
 
         Args:
             collection_name: Name of the collection to upsert to.
@@ -431,7 +466,7 @@ class VectorStore:
 
         await self.ensure_collection(collection_name)
 
-        # Prepare documents and metadata for fastembed
+        # Prepare documents and metadata
         documents = [node.content for node in nodes]
         metadata = [
             {
@@ -453,23 +488,39 @@ class VectorStore:
             }
             for node in nodes
         ]
-        ids = [node.id for node in nodes]
+        ids = [str(node.id) for node in nodes]
 
         # Ensure vector name and embedding model are initialized
         if self._vector_name is None or self._embedding_model_name is None:
             raise RuntimeError("Vector store not properly initialized")
 
-        # Build points with Document for automatic embedding inference
-        points = [
-            models.PointStruct(
-                id=point_id,
-                vector={
-                    self._vector_name: models.Document(text=doc, model=self._embedding_model_name)
-                },
-                payload=meta,
-            )
-            for point_id, doc, meta in zip(ids, documents, metadata, strict=True)
-        ]
+        if self._use_openai:
+            # OpenAI: generate embeddings manually
+            embedder = get_cached_embedder()
+            embeddings = await embedder.embed(documents)
+
+            points = [
+                models.PointStruct(
+                    id=point_id,
+                    vector={self._vector_name: embedding},
+                    payload=meta,
+                )
+                for point_id, embedding, meta in zip(ids, embeddings, metadata, strict=True)
+            ]
+        else:
+            # Local FastEmbed: use Document for automatic embedding inference
+            points = [
+                models.PointStruct(
+                    id=point_id,
+                    vector={
+                        self._vector_name: models.Document(
+                            text=doc, model=self._embedding_model_name
+                        )
+                    },
+                    payload=meta,
+                )
+                for point_id, doc, meta in zip(ids, documents, metadata, strict=True)
+            ]
 
         await self.client.upsert(
             collection_name=collection_name,
@@ -615,14 +666,28 @@ class VectorStore:
         if self._vector_name is None or self._embedding_model_name is None:
             raise RuntimeError("Vector store not properly initialized")
 
-        # Perform search using query_points with Document for embedding inference
-        results = await self.client.query_points(
-            collection_name=collection_name,
-            query=models.Document(text=query, model=self._embedding_model_name),
-            using=self._vector_name,
-            limit=limit,
-            query_filter=query_filter,
-        )
+        if self._use_openai:
+            # OpenAI: generate query embedding manually
+            embedder = get_cached_embedder()
+            query_embeddings = await embedder.embed([query])
+            query_vector = query_embeddings[0]
+
+            results = await self.client.query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                using=self._vector_name,
+                limit=limit,
+                query_filter=query_filter,
+            )
+        else:
+            # Local FastEmbed: use Document for automatic embedding inference
+            results = await self.client.query_points(
+                collection_name=collection_name,
+                query=models.Document(text=query, model=self._embedding_model_name),
+                using=self._vector_name,
+                limit=limit,
+                query_filter=query_filter,
+            )
 
         # Format results
         formatted_results = []

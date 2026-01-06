@@ -44,23 +44,23 @@ from indexter_rlm.exceptions import RepoExistsError, RepoNotFoundError
 
 def test_version_callback_prints_version_and_exits():
     """Test version callback prints version and raises Exit."""
-    with patch("indexter.cli.cli.console") as mock_console:
+    with patch("indexter_rlm.cli.cli.console") as mock_console:
         with pytest.raises(typer.Exit):
             version_callback(True)
 
-        mock_console.print.assert_called_once_with(f"indexter {__version__}")
+        mock_console.print.assert_called_once_with(f"indexter-rlm {__version__}")
 
 
 def test_version_callback_does_nothing_when_false():
     """Test version callback does nothing when value is False."""
-    with patch("indexter.cli.cli.console") as mock_console:
+    with patch("indexter_rlm.cli.cli.console") as mock_console:
         version_callback(False)
         mock_console.print.assert_not_called()
 
 
 def test_main_callback_verbose_flag():
     """Test main callback configures verbose logging."""
-    with patch("indexter.cli.cli.logging.basicConfig") as mock_config:
+    with patch("indexter_rlm.cli.cli.logging.basicConfig") as mock_config:
         main(verbose=True)
 
         # Verify logging configured with DEBUG level
@@ -70,7 +70,7 @@ def test_main_callback_verbose_flag():
 
 def test_main_callback_non_verbose():
     """Test main callback configures normal logging."""
-    with patch("indexter.cli.cli.logging.basicConfig") as mock_config:
+    with patch("indexter_rlm.cli.cli.logging.basicConfig") as mock_config:
         main(verbose=False)
 
         # Verify logging configured with INFO level
@@ -83,7 +83,7 @@ def test_init_successful(cli_runner):
     mock_repo = Mock()
     mock_repo.name = "test-repo"
 
-    with patch("indexter.cli.cli.anyio.run", return_value=mock_repo) as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run", return_value=mock_repo) as mock_run:
         result = cli_runner.invoke(app, ["init", "/path/to/repo"])
 
         assert result.exit_code == 0
@@ -98,7 +98,7 @@ def test_init_successful(cli_runner):
 
 def test_init_with_repo_exists_error(cli_runner):
     """Test init command when repository already exists."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=RepoExistsError("Repo exists")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=RepoExistsError("Repo exists")):
         result = cli_runner.invoke(app, ["init", "/path/to/repo"])
 
         assert result.exit_code == 1
@@ -107,7 +107,7 @@ def test_init_with_repo_exists_error(cli_runner):
 
 def test_init_with_unexpected_error(cli_runner):
     """Test init command with unexpected error."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
         result = cli_runner.invoke(app, ["init", "/path/to/repo"])
 
         assert result.exit_code == 1
@@ -119,7 +119,7 @@ def test_init_resolves_path(cli_runner):
     mock_repo = Mock()
     mock_repo.name = "test-repo"
 
-    with patch("indexter.cli.cli.anyio.run", return_value=mock_repo):
+    with patch("indexter_rlm.cli.cli.anyio.run", return_value=mock_repo):
         with patch("pathlib.Path.resolve") as mock_resolve:
             mock_resolve.return_value = Path("/resolved/path")
 
@@ -146,7 +146,7 @@ def test_index_successful_with_changes(cli_runner):
     mock_result.skipped_files = 0
     mock_result.summary = "Indexed 2 files (+5 nodes, ~3 updated, -1 deleted) in 1.50s"
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_result)
 
         result = cli_runner.invoke(app, ["index", "test-repo"])
@@ -171,7 +171,7 @@ def test_index_successful_no_changes(cli_runner):
     mock_result.files_checked = 10
     mock_result.errors = []
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_result)
 
         result = cli_runner.invoke(app, ["index", "test-repo"])
@@ -194,7 +194,7 @@ def test_index_with_full_flag(cli_runner):
     mock_result.errors = []
     mock_result.summary = "Indexed 0 files (+0 nodes, ~0 updated, -0 deleted) in 0.25s"
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_result)
 
         result = cli_runner.invoke(app, ["index", "test-repo", "--full"])
@@ -219,7 +219,7 @@ def test_index_with_errors(cli_runner):
     mock_result.skipped_files = 0
     mock_result.summary = "Indexed 1 files (+1 nodes, ~0 updated, -0 deleted) in 0.50s"
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_result)
 
         result = cli_runner.invoke(app, ["index", "test-repo"])
@@ -246,7 +246,7 @@ def test_index_with_many_errors(cli_runner):
     mock_result.skipped_files = 0
     mock_result.summary = "Indexed 1 files (+1 nodes, ~0 updated, -0 deleted) in 0.50s"
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_result)
 
         result = cli_runner.invoke(app, ["index", "test-repo"])
@@ -271,7 +271,7 @@ def test_index_with_skipped_files(cli_runner):
     mock_result.skipped_files = 5
     mock_result.summary = "Indexed 1 files (+1 nodes, ~0 updated, -0 deleted) in 0.50s"
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_result)
 
         result = cli_runner.invoke(app, ["index", "test-repo"])
@@ -283,7 +283,7 @@ def test_index_with_skipped_files(cli_runner):
 
 def test_index_repo_not_found(cli_runner):
     """Test index command when repository is not found."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=RepoNotFoundError("Not found")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=RepoNotFoundError("Not found")):
         result = cli_runner.invoke(app, ["index", "nonexistent-repo"])
 
         assert result.exit_code == 1
@@ -293,7 +293,7 @@ def test_index_repo_not_found(cli_runner):
 
 def test_index_unexpected_error(cli_runner):
     """Test index command with unexpected error."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
         result = cli_runner.invoke(app, ["index", "test-repo"])
 
         assert result.exit_code == 1
@@ -318,7 +318,7 @@ def test_search_successful(cli_runner):
         },
     ]
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_results)
 
         result = cli_runner.invoke(app, ["search", "hello", "test-repo"])
@@ -335,7 +335,7 @@ def test_search_with_limit(cli_runner):
     mock_repo.name = "test-repo"
     mock_results = []
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_results)
 
         result = cli_runner.invoke(app, ["search", "test", "test-repo", "--limit", "5"])
@@ -350,7 +350,7 @@ def test_search_no_results(cli_runner):
     mock_repo = Mock()
     mock_repo.name = "test-repo"
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, [])
 
         result = cli_runner.invoke(app, ["search", "nonexistent", "test-repo"])
@@ -361,7 +361,7 @@ def test_search_no_results(cli_runner):
 
 def test_search_repo_not_found(cli_runner):
     """Test search command when repository is not found."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=RepoNotFoundError("Not found")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=RepoNotFoundError("Not found")):
         result = cli_runner.invoke(app, ["search", "test", "nonexistent-repo"])
 
         assert result.exit_code == 1
@@ -370,7 +370,7 @@ def test_search_repo_not_found(cli_runner):
 
 def test_search_unexpected_error(cli_runner):
     """Test search command with unexpected error."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
         result = cli_runner.invoke(app, ["search", "test", "test-repo"])
 
         assert result.exit_code == 1
@@ -391,7 +391,7 @@ def test_search_truncates_long_content(cli_runner):
         },
     ]
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_results)
 
         result = cli_runner.invoke(app, ["search", "test", "test-repo"])
@@ -426,7 +426,7 @@ def test_status_with_repositories(cli_runner):
         "documents_indexed_stale": 0,
     }
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         # Return list of tuples: (repo, status, error)
         mock_run.return_value = [
             (mock_repo1, mock_status1, None),
@@ -445,7 +445,7 @@ def test_status_with_repositories(cli_runner):
 
 def test_status_no_repositories(cli_runner):
     """Test status command with no indexed repositories."""
-    with patch("indexter.cli.cli.anyio.run", return_value=[]):
+    with patch("indexter_rlm.cli.cli.anyio.run", return_value=[]):
         result = cli_runner.invoke(app, ["status"])
 
         assert result.exit_code == 0
@@ -465,7 +465,7 @@ def test_status_with_error(cli_runner):
         "documents_indexed_stale": 2,
     }
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         # Return list of tuples: (repo, status, error)
         mock_run.return_value = [
             (mock_repo1, mock_status1, None),
@@ -483,7 +483,7 @@ def test_status_repo_error_handling(cli_runner):
     mock_repo1.name = "broken-repo"
     mock_repo1.path = Path("/path/to/broken")
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         # Return list of tuples with error in third element
         mock_run.return_value = [
             (mock_repo1, None, "Status error"),
@@ -498,7 +498,7 @@ def test_status_repo_error_handling(cli_runner):
 
 def test_forget_successful(cli_runner):
     """Test forget command removes repository successfully."""
-    with patch("indexter.cli.cli.anyio.run", return_value=None):
+    with patch("indexter_rlm.cli.cli.anyio.run", return_value=None):
         result = cli_runner.invoke(app, ["forget", "test-repo"])
 
         assert result.exit_code == 0
@@ -507,7 +507,7 @@ def test_forget_successful(cli_runner):
 
 def test_forget_repo_not_found(cli_runner):
     """Test forget command when repository is not found."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=RepoNotFoundError("Not found")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=RepoNotFoundError("Not found")):
         result = cli_runner.invoke(app, ["forget", "nonexistent-repo"])
 
         assert result.exit_code == 1
@@ -516,7 +516,7 @@ def test_forget_repo_not_found(cli_runner):
 
 def test_forget_unexpected_error(cli_runner):
     """Test forget command with unexpected error."""
-    with patch("indexter.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
+    with patch("indexter_rlm.cli.cli.anyio.run", side_effect=ValueError("Unexpected")):
         result = cli_runner.invoke(app, ["forget", "test-repo"])
 
         assert result.exit_code == 1
@@ -549,7 +549,7 @@ def test_app_help_flag(cli_runner):
     result = cli_runner.invoke(app, ["--help"])
 
     assert result.exit_code == 0
-    assert "indexter - Enhanced codebase context" in result.stdout
+    assert "indexter-rlm" in result.stdout
 
 
 def test_app_version_flag(cli_runner):
@@ -557,13 +557,13 @@ def test_app_version_flag(cli_runner):
     result = cli_runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert f"indexter {__version__}" in result.stdout
+    assert f"indexter-rlm {__version__}" in result.stdout
 
 
 def test_app_verbose_flag(cli_runner):
     """Test app --verbose flag is recognized."""
     # The verbose flag is processed by the callback, so we just verify it's accepted
-    with patch("indexter.cli.cli.anyio.run", return_value=[]):
+    with patch("indexter_rlm.cli.cli.anyio.run", return_value=[]):
         result = cli_runner.invoke(app, ["--verbose", "status"])
 
         assert result.exit_code == 0
@@ -627,7 +627,7 @@ def test_search_replaces_newlines_in_content(cli_runner):
         },
     ]
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         mock_run.return_value = (mock_repo, mock_results)
 
         result = cli_runner.invoke(app, ["search", "test", "test-repo"])
@@ -645,7 +645,7 @@ def test_status_missing_status_fields(cli_runner):
     # Status dict missing some fields
     mock_status = {"nodes_indexed": 100}
 
-    with patch("indexter.cli.cli.anyio.run") as mock_run:
+    with patch("indexter_rlm.cli.cli.anyio.run") as mock_run:
         # Return list of tuples: (repo, status, error)
         mock_run.return_value = [(mock_repo, mock_status, None)]
 

@@ -141,6 +141,39 @@ from .walker import Walker
 logger = logging.getLogger(__name__)
 
 
+class Note(BaseModel):
+    """
+    A scratchpad note for agent observations during exploration.
+
+    Notes allow agents to accumulate observations across exploration steps,
+    storing insights, hypotheses, and findings that can be referenced later
+    in the exploration session.
+
+    Attributes:
+        key: Unique identifier for the note within a repository.
+        content: The note content (observations, insights, etc.).
+        tags: Optional tags for categorizing and filtering notes.
+        created_at: Timestamp when the note was first created.
+        updated_at: Timestamp when the note was last modified.
+    """
+
+    key: str
+    content: str
+    tags: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    def model_dump_for_display(self) -> dict:
+        """Return a display-friendly dict with formatted timestamps."""
+        return {
+            "key": self.key,
+            "content": self.content,
+            "tags": self.tags,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
+
 class IndexResult(BaseModel):
     """
     Result of a repository indexing/sync operation.

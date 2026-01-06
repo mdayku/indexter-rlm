@@ -1,6 +1,8 @@
 """Tests for walker.py module."""
 
 import logging
+import os
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -8,6 +10,12 @@ import anyio
 import pytest
 
 from indexter_rlm.walker import IgnorePatternMatcher, Walker
+
+# Skip symlink tests on Windows (requires admin privileges)
+skip_symlinks_on_windows = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Symlink creation requires admin privileges on Windows"
+)
 
 
 class TestIgnorePatternMatcher:
@@ -51,6 +59,10 @@ class TestIgnorePatternMatcher:
 
         assert matcher._patterns == []
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="File permissions work differently on Windows"
+    )
     def test_add_patterns_from_file_read_error(self, tmp_path, caplog):
         """Test handling of file read errors."""
         bad_file = tmp_path / "bad_file"
@@ -194,7 +206,7 @@ class TestWalker:
         mock_repo.settings.path = tmp_path
         mock_repo.settings.ignore_patterns = ["custom/", "*.custom"]
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = ["*.pyc", "__pycache__/"]
             walker = Walker(mock_repo)
 
@@ -207,7 +219,7 @@ class TestWalker:
         """Test matcher building when .gitignore doesn't exist."""
         mock_repo.path = str(tmp_path)
         mock_repo.settings.path = tmp_path
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = ["*.pyc"]
             walker = Walker(mock_repo)
 
@@ -223,7 +235,7 @@ class TestWalker:
         mock_repo.path = str(repo_path)
         mock_repo.settings.path = repo_path
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             walker = Walker(mock_repo)
 
@@ -247,7 +259,7 @@ class TestWalker:
         mock_repo.path = str(repo_path)
         mock_repo.settings.path = repo_path
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             walker = Walker(mock_repo)
 
@@ -277,7 +289,7 @@ class TestWalker:
         (repo_path / "src" / "main.py").touch()
         (repo_path / "node_modules" / "package.json").touch()
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = ["node_modules/"]
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -304,7 +316,7 @@ class TestWalker:
         sub_dir.mkdir()
         (sub_dir / "file3.py").touch()
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -331,7 +343,7 @@ class TestWalker:
         (repo_path / "script.py").write_text("print('hello')")
         (repo_path / "image.png").write_bytes(b"fake image data")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -357,7 +369,7 @@ class TestWalker:
         (repo_path / "app.js").write_text("console.log('hello');")
         (repo_path / "app.min.js").write_text("console.log('hello');")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -383,7 +395,7 @@ class TestWalker:
         (repo_path / "main.py").write_text("print('main')")
         (repo_path / "test.pyc").write_bytes(b"compiled")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = ["*.pyc"]
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -409,7 +421,7 @@ class TestWalker:
         (repo_path / "small.py").write_text("# small")
         (repo_path / "large.py").write_text("x" * 200)
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -435,7 +447,7 @@ class TestWalker:
         (repo_path / "empty.py").touch()
         (repo_path / "nonempty.py").write_text("print('hello')")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -459,7 +471,7 @@ class TestWalker:
 
         (repo_path / "test.py").write_text("print('hello')")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = [".git/"]
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -492,7 +504,7 @@ class TestWalker:
 
         (repo_path / "test.py").write_text("print('hello')")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -522,7 +534,7 @@ class TestWalker:
         content = "print('hello world')"
         test_file.write_text(content)
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -554,12 +566,12 @@ class TestWalker:
         content = "print('hello')"
         test_file.write_text(content)
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
 
-        with patch("indexter.walker.compute_hash") as mock_hash:
+        with patch("indexter_rlm.walker.compute_hash") as mock_hash:
             mock_hash.return_value = "fake_hash"
             results = [r async for r in walker.walk()]
 
@@ -587,13 +599,14 @@ class TestWalker:
         (repo_path / ".git").mkdir()
         (repo_path / ".git" / "config").write_text("config")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = [".git/"]
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
 
         results = [r async for r in walker.walk()]
-        paths = [r["path"] for r in results]
+        # Normalize paths to forward slashes for cross-platform comparison
+        paths = [r["path"].replace("\\", "/") for r in results]
 
         assert "src/main.py" in paths
         assert "src/utils/helper.py" in paths
@@ -613,7 +626,7 @@ class TestWalker:
 
         (repo_path / "regular.py").write_text("print('hello')")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -633,6 +646,7 @@ class TestWalker:
                     pass  # Expected
 
     @pytest.mark.anyio
+    @skip_symlinks_on_windows
     async def test_walk_recursive_skips_symlink_to_dir_outside_repo(
         self, mock_repo, tmp_path, caplog
     ):
@@ -657,7 +671,7 @@ class TestWalker:
         symlink_path = repo_path / "external_link"
         symlink_path.symlink_to(external_dir)
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -679,6 +693,7 @@ class TestWalker:
         )
 
     @pytest.mark.anyio
+    @skip_symlinks_on_windows
     async def test_walk_recursive_follows_symlink_to_dir_inside_repo(self, mock_repo, tmp_path):
         """Test that symlinks pointing to directories inside the repo are followed."""
         repo_path = tmp_path / "repo"
@@ -695,7 +710,7 @@ class TestWalker:
         symlink_path = repo_path / "src_link"
         symlink_path.symlink_to(repo_path / "src")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -708,6 +723,7 @@ class TestWalker:
         assert "src_link/module.py" in file_paths
 
     @pytest.mark.anyio
+    @skip_symlinks_on_windows
     async def test_walk_recursive_skips_broken_symlinks(self, mock_repo, tmp_path, caplog):
         """Test that broken symlinks are handled gracefully."""
         repo_path = tmp_path / "repo"
@@ -723,7 +739,7 @@ class TestWalker:
         broken_symlink = repo_path / "broken_link"
         broken_symlink.symlink_to(tmp_path / "nonexistent_dir")
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -738,6 +754,7 @@ class TestWalker:
         # Should not crash on the broken symlink
 
     @pytest.mark.anyio
+    @skip_symlinks_on_windows
     async def test_walk_recursive_handles_symlink_file_outside_repo(self, mock_repo, tmp_path):
         """Test that symlinks to files (not dirs) outside repo are yielded but safe.
 
@@ -761,7 +778,7 @@ class TestWalker:
         file_symlink = repo_path / "external_file_link.py"
         file_symlink.symlink_to(external_file)
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)
@@ -775,6 +792,7 @@ class TestWalker:
         assert "external_file_link.py" in file_names
 
     @pytest.mark.anyio
+    @skip_symlinks_on_windows
     async def test_walk_recursive_deeply_nested_symlink_escape(self, mock_repo, tmp_path, caplog):
         """Test that even deeply nested symlinks that escape the repo are caught."""
         repo_path = tmp_path / "repo"
@@ -797,7 +815,7 @@ class TestWalker:
         escape_link = nested / "escape"
         escape_link.symlink_to(external_dir)
 
-        with patch("indexter.walker.settings") as mock_settings:
+        with patch("indexter_rlm.walker.settings") as mock_settings:
             mock_settings.ignore_patterns = []
             mock_repo.settings.ignore_patterns = []
             walker = Walker(mock_repo)

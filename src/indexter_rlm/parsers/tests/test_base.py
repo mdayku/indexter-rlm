@@ -194,8 +194,8 @@ def test_baselanguageparser_validates_language():
         InvalidLanguageParser()
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
 def test_baselanguageparser_initialization(mock_get_parser, mock_get_language):
     """Test BaseLanguageParser initializes tree-sitter components."""
     mock_language = Mock()
@@ -248,10 +248,10 @@ def test_baselanguageparser_process_match_is_abstract():
         NoProcessParser()
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
-@patch("indexter.parsers.base.Query")
-@patch("indexter.parsers.base.QueryCursor")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.Query")
+@patch("indexter_rlm.parsers.base.QueryCursor")
 def test_baselanguageparser_parse(
     mock_cursor_class, mock_query_class, mock_get_parser, mock_get_language
 ):
@@ -308,10 +308,10 @@ def test_baselanguageparser_parse(
     assert info["node_name"] == "test"
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
-@patch("indexter.parsers.base.Query")
-@patch("indexter.parsers.base.QueryCursor")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.Query")
+@patch("indexter_rlm.parsers.base.QueryCursor")
 def test_baselanguageparser_parse_skips_none_results(
     mock_cursor_class, mock_query_class, mock_get_parser, mock_get_language
 ):
@@ -374,10 +374,10 @@ def test_baselanguageparser_parse_skips_none_results(
     assert info["node_name"] == "test2"
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
-@patch("indexter.parsers.base.Query")
-@patch("indexter.parsers.base.QueryCursor")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.Query")
+@patch("indexter_rlm.parsers.base.QueryCursor")
 def test_baselanguageparser_parse_empty_matches(
     mock_cursor_class, mock_query_class, mock_get_parser, mock_get_language
 ):
@@ -424,10 +424,10 @@ def test_baselanguageparser_parse_empty_matches(
     assert len(results) == 0
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
-@patch("indexter.parsers.base.Query")
-@patch("indexter.parsers.base.QueryCursor")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.Query")
+@patch("indexter_rlm.parsers.base.QueryCursor")
 def test_baselanguageparser_parse_encodes_source(
     mock_cursor_class, mock_query_class, mock_get_parser, mock_get_language
 ):
@@ -469,10 +469,10 @@ def test_baselanguageparser_parse_encodes_source(
     assert args[0] == b"def test(): pass"
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
-@patch("indexter.parsers.base.Query")
-@patch("indexter.parsers.base.QueryCursor")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.Query")
+@patch("indexter_rlm.parsers.base.QueryCursor")
 def test_baselanguageparser_parse_creates_query(
     mock_cursor_class, mock_query_class, mock_get_parser, mock_get_language
 ):
@@ -513,10 +513,10 @@ def test_baselanguageparser_parse_creates_query(
     mock_query_class.assert_called_once_with(mock_language, query_string)
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
-@patch("indexter.parsers.base.Query")
-@patch("indexter.parsers.base.QueryCursor")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.Query")
+@patch("indexter_rlm.parsers.base.QueryCursor")
 def test_baselanguageparser_parse_multiple_matches(
     mock_cursor_class, mock_query_class, mock_get_parser, mock_get_language
 ):
@@ -580,8 +580,8 @@ def test_baselanguageparser_parse_multiple_matches(
     assert results[2][1]["node_name"] == "test3"
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
 def test_baselanguageparser_with_valid_languages(mock_get_parser, mock_get_language):
     """Test that BaseLanguageParser accepts all valid LanguageEnum values."""
     mock_language = Mock()
@@ -612,8 +612,8 @@ def test_baseparser_parse_abstract_implementation():
     assert result is None  # Abstract method returns None (implicit from pass)
 
 
-@patch("indexter.parsers.base.get_language")
-@patch("indexter.parsers.base.get_ts_parser")
+@patch("indexter_rlm.parsers.base.get_language")
+@patch("indexter_rlm.parsers.base.get_ts_parser")
 def test_baselanguageparser_abstract_implementations(mock_get_parser, mock_get_language):
     """Test BaseLanguageParser abstract property/method implementations."""
     mock_language = Mock()
