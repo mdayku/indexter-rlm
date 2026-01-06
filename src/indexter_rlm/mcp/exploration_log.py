@@ -7,7 +7,7 @@ Logs are stored per-repository at ~/.config/indexter/logs/{repo}/exploration_{ti
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -32,7 +32,7 @@ class ExplorationLogger:
             repo_name: Name of the repository being explored.
         """
         self.repo_name = repo_name
-        self._session_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        self._session_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self._log_file: Path | None = None
         self._enabled = True
 
@@ -75,7 +75,7 @@ class ExplorationLogger:
             self._ensure_dir()
 
             entry = {
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "session_id": self._session_id,
                 "tool": tool,
                 "args": args,

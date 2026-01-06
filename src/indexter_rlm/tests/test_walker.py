@@ -1,7 +1,6 @@
 """Tests for walker.py module."""
 
 import logging
-import os
 import sys
 from pathlib import Path
 from unittest.mock import patch

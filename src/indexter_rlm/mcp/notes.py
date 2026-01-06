@@ -7,7 +7,7 @@ Notes are stored at ~/.indexter-rlm/notes/{repo_name}.json.
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from indexter_rlm.config import settings
@@ -108,7 +108,7 @@ class NoteStore:
         """
         self._load()
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         existing = self._notes.get(key)
 
         if existing:

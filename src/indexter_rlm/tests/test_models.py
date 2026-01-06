@@ -1,6 +1,6 @@
 """Tests for indexter.models module."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -34,12 +34,12 @@ def test_index_result_defaults():
     assert result.nodes_updated == 0
     assert result.errors == []
     assert isinstance(result.indexed_at, datetime)
-    assert result.indexed_at.tzinfo == UTC
+    assert result.indexed_at.tzinfo == timezone.utc
 
 
 def test_index_result_with_data():
     """Test IndexResult with custom data."""
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = IndexResult(
         files_indexed=["file1.py", "file2.py"],
         files_deleted=["old.py"],

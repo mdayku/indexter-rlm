@@ -127,7 +127,7 @@ from __future__ import annotations
 import builtins
 import logging
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field
@@ -160,8 +160,8 @@ class Note(BaseModel):
     key: str
     content: str
     tags: list[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def model_dump_for_display(self) -> dict:
         """Return a display-friendly dict with formatted timestamps."""
@@ -200,7 +200,7 @@ class IndexResult(BaseModel):
     nodes_added: int = 0
     nodes_deleted: int = 0
     nodes_updated: int = 0
-    indexed_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    indexed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     duration: float = 0.0
     errors: list[str] = Field(default_factory=list)
 
@@ -568,7 +568,7 @@ class Repo(BaseModel):
             operation, including files processed, nodes added/updated/deleted,
             and any errors encountered.
         """
-        start_time = datetime.now(UTC)
+        start_time = datetime.now(timezone.utc)
 
         result = IndexResult()
 
@@ -722,7 +722,7 @@ class Repo(BaseModel):
             # We don't know exact node count deleted, but track file count
             result.nodes_deleted = len(deleted_paths)  # Approximation
 
-        end_time = datetime.now(UTC)
+        end_time = datetime.now(timezone.utc)
 
         # Finalize result
         result.indexed_at = end_time
