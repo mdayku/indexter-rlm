@@ -116,7 +116,7 @@ class TestHookInstall:
         result = runner.invoke(hooks_app, ["install", str(tmp_path)])
 
         assert result.exit_code == 1
-        assert "not a git repository" in result.output
+        assert "is not a git" in result.output
 
     def test_install_hook_exists_no_force(self, tmp_path):
         """Test error when hook exists and not using force."""
@@ -241,4 +241,4 @@ class TestHookStatus:
         result = runner.invoke(hooks_app, ["status", str(tmp_path)])
 
         assert result.exit_code == 1
-        assert "not a git repository" in result.output
+        assert "is not a git" in result.output
