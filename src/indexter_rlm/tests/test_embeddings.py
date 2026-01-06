@@ -140,4 +140,3 @@ class TestGetEmbedder:
 
                 # Should fall back to local
                 assert isinstance(embedder, LocalEmbedder)
-

@@ -99,7 +99,7 @@ Save/update repository registry:
 import json
 import logging
 import os
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -299,7 +299,7 @@ def get_data_dir() -> Path:
     return base / "indexter"
 
 
-class MCPTransport(StrEnum):
+class MCPTransport(str, Enum):
     """
     MCP server operation mode.
 
@@ -340,7 +340,7 @@ class MCPSettings(BaseSettings):
     port: int = 8765
 
 
-class StoreMode(StrEnum):
+class StoreMode(str, Enum):
     """
     Vector store connection mode.
 
@@ -357,7 +357,7 @@ class StoreMode(StrEnum):
     memory = "memory"  # In-memory storage (for testing)
 
 
-class EmbeddingProvider(StrEnum):
+class EmbeddingProvider(str, Enum):
     """
     Embedding generation provider.
 

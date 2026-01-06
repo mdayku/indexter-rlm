@@ -145,9 +145,9 @@ class SymbolIndex(BaseModel):
     def get_importers(self, module_path: str) -> list[ImportRelation]:
         """Find all files that import from a given module."""
         return [
-            imp for imp in self.imports
-            if imp.imported_module == module_path or
-            imp.imported_module.endswith(f".{module_path}")
+            imp
+            for imp in self.imports
+            if imp.imported_module == module_path or imp.imported_module.endswith(f".{module_path}")
         ]
 
     def get_import_chain(self, symbol_name: str, max_depth: int = 10) -> list[list[str]]:
@@ -201,8 +201,7 @@ class SymbolIndex(BaseModel):
         # Remove definitions from this file
         for symbol_name in list(self.definitions.keys()):
             self.definitions[symbol_name] = [
-                d for d in self.definitions[symbol_name]
-                if d.file_path != file_path
+                d for d in self.definitions[symbol_name] if d.file_path != file_path
             ]
             if not self.definitions[symbol_name]:
                 del self.definitions[symbol_name]
@@ -210,8 +209,7 @@ class SymbolIndex(BaseModel):
         # Remove references from this file
         for symbol_name in list(self.references.keys()):
             self.references[symbol_name] = [
-                r for r in self.references[symbol_name]
-                if r.file_path != file_path
+                r for r in self.references[symbol_name] if r.file_path != file_path
             ]
             if not self.references[symbol_name]:
                 del self.references[symbol_name]
@@ -279,10 +277,7 @@ def save_symbol_index(index: SymbolIndex) -> None:
     """Save a symbol index to disk."""
     index_path = get_symbol_index_path(index.repo_name)
     try:
-        index_path.write_text(
-            json.dumps(index.model_dump(), indent=2),
-            encoding="utf-8"
-        )
+        index_path.write_text(json.dumps(index.model_dump(), indent=2), encoding="utf-8")
     except Exception as e:
         logger.error(f"Failed to save symbol index: {e}")
 
@@ -290,4 +285,3 @@ def save_symbol_index(index: SymbolIndex) -> None:
 def clear_symbol_index_cache() -> None:
     """Clear the in-memory cache of symbol indices."""
     _symbol_indices.clear()
-

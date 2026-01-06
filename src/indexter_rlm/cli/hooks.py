@@ -26,7 +26,7 @@ hooks_app = typer.Typer(
 
 
 # Hook script templates
-POST_COMMIT_HOOK = '''\
+POST_COMMIT_HOOK = """\
 #!/bin/sh
 # Indexter-RLM post-commit hook
 # Automatically re-indexes the repository after each commit
@@ -41,9 +41,9 @@ echo "[indexter-rlm] Updating index for $REPO_NAME..."
 indexter-rlm index "$REPO_NAME" 2>/dev/null &
 
 exit 0
-'''
+"""
 
-PRE_PUSH_HOOK = '''\
+PRE_PUSH_HOOK = """\
 #!/bin/sh
 # Indexter-RLM pre-push hook
 # Ensures the semantic index is up to date before pushing
@@ -56,9 +56,9 @@ echo "[indexter-rlm] Ensuring index is up to date for $REPO_NAME..."
 indexter-rlm index "$REPO_NAME"
 
 exit $?
-'''
+"""
 
-PRE_COMMIT_HOOK = '''\
+PRE_COMMIT_HOOK = """\
 #!/bin/sh
 # Indexter-RLM pre-commit hook
 # Re-indexes the repository before each commit
@@ -72,7 +72,7 @@ echo "[indexter-rlm] Updating index for $REPO_NAME..."
 indexter-rlm index "$REPO_NAME"
 
 exit $?
-'''
+"""
 
 HOOK_TEMPLATES = {
     "post-commit": POST_COMMIT_HOOK,
@@ -215,13 +215,9 @@ def install_hook(
     console.print(f"[green]✓[/green] Installed {hook_type} hook at {hook_path}")
 
     if hook_type == "post-commit":
-        console.print(
-            "[dim]The index will be updated in the background after each commit.[/dim]"
-        )
+        console.print("[dim]The index will be updated in the background after each commit.[/dim]")
     elif hook_type == "pre-push":
-        console.print(
-            "[dim]The index will be updated before each push.[/dim]"
-        )
+        console.print("[dim]The index will be updated before each push.[/dim]")
     elif hook_type == "pre-commit":
         console.print(
             "[yellow]Warning:[/yellow] pre-commit hooks can slow down commits. "
@@ -288,9 +284,7 @@ def uninstall_hook(
                 console.print(f"[dim]Restored original {ht} hook from backup[/dim]")
 
     if removed:
-        console.print(
-            f"[green]✓[/green] Uninstalled hooks: {', '.join(removed)}"
-        )
+        console.print(f"[green]✓[/green] Uninstalled hooks: {', '.join(removed)}")
     else:
         console.print("[dim]No indexter-rlm hooks found to uninstall.[/dim]")
 
@@ -329,4 +323,3 @@ def hook_status(
             console.print(f"  {hook_type}: [green]installed (indexter-rlm)[/green]")
         else:
             console.print(f"  {hook_type}: [yellow]exists (other)[/yellow]")
-

@@ -77,21 +77,23 @@ def _extract_definitions(
             # Get signature
             body = node.child_by_field_name("body")
             sig_end = body.start_byte if body else node.end_byte
-            signature = source_bytes[node.start_byte:sig_end].decode().rstrip().rstrip(":")
+            signature = source_bytes[node.start_byte : sig_end].decode().rstrip().rstrip(":")
 
             # Get docstring
             documentation = _get_docstring(node, source_bytes)
 
-            index.add_definition(SymbolDefinition(
-                name=name,
-                qualified_name=qualified,
-                symbol_type=symbol_type,
-                file_path=file_path,
-                line=node.start_point[0] + 1,
-                end_line=node.end_point[0] + 1,
-                signature=signature,
-                documentation=documentation or "",
-            ))
+            index.add_definition(
+                SymbolDefinition(
+                    name=name,
+                    qualified_name=qualified,
+                    symbol_type=symbol_type,
+                    file_path=file_path,
+                    line=node.start_point[0] + 1,
+                    end_line=node.end_point[0] + 1,
+                    signature=signature,
+                    documentation=documentation or "",
+                )
+            )
             defined_symbols.add(name)
 
     elif node.type == "class_definition":
@@ -100,15 +102,17 @@ def _extract_definitions(
             name = name_node.text.decode()
             qualified = f"{parent_scope}.{name}" if parent_scope else name
 
-            index.add_definition(SymbolDefinition(
-                name=name,
-                qualified_name=qualified,
-                symbol_type="class",
-                file_path=file_path,
-                line=node.start_point[0] + 1,
-                end_line=node.end_point[0] + 1,
-                documentation=_get_docstring(node, source_bytes) or "",
-            ))
+            index.add_definition(
+                SymbolDefinition(
+                    name=name,
+                    qualified_name=qualified,
+                    symbol_type="class",
+                    file_path=file_path,
+                    line=node.start_point[0] + 1,
+                    end_line=node.end_point[0] + 1,
+                    documentation=_get_docstring(node, source_bytes) or "",
+                )
+            )
             defined_symbols.add(name)
 
             # Recurse into class body with new scope
@@ -132,14 +136,16 @@ def _extract_definitions(
                 name = left.text.decode()
                 # Only track UPPER_CASE constants
                 if name.isupper() or (name.replace("_", "").isupper() and "_" in name):
-                    index.add_definition(SymbolDefinition(
-                        name=name,
-                        qualified_name=name,
-                        symbol_type="constant",
-                        file_path=file_path,
-                        line=node.start_point[0] + 1,
-                        end_line=node.end_point[0] + 1,
-                    ))
+                    index.add_definition(
+                        SymbolDefinition(
+                            name=name,
+                            qualified_name=name,
+                            symbol_type="constant",
+                            file_path=file_path,
+                            line=node.start_point[0] + 1,
+                            end_line=node.end_point[0] + 1,
+                        )
+                    )
                     defined_symbols.add(name)
 
     # Recurse into children
@@ -159,25 +165,29 @@ def _extract_imports(
         for child in node.children:
             if child.type == "dotted_name":
                 module_name = child.text.decode()
-                index.add_import(ImportRelation(
-                    importing_file=file_path,
-                    imported_module=module_name,
-                    imported_names=[],
-                    line=node.start_point[0] + 1,
-                    is_from_import=False,
-                ))
-            elif child.type == "aliased_import":
-                # import X as Y
-                name_node = child.child_by_field_name("name")
-                if name_node:
-                    module_name = name_node.text.decode()
-                    index.add_import(ImportRelation(
+                index.add_import(
+                    ImportRelation(
                         importing_file=file_path,
                         imported_module=module_name,
                         imported_names=[],
                         line=node.start_point[0] + 1,
                         is_from_import=False,
-                    ))
+                    )
+                )
+            elif child.type == "aliased_import":
+                # import X as Y
+                name_node = child.child_by_field_name("name")
+                if name_node:
+                    module_name = name_node.text.decode()
+                    index.add_import(
+                        ImportRelation(
+                            importing_file=file_path,
+                            imported_module=module_name,
+                            imported_names=[],
+                            line=node.start_point[0] + 1,
+                            is_from_import=False,
+                        )
+                    )
 
     elif node.type == "import_from_statement":
         # from module import name1, name2
@@ -196,13 +206,15 @@ def _extract_imports(
                 imported_names.append("*")
 
         if module_name or imported_names:
-            index.add_import(ImportRelation(
-                importing_file=file_path,
-                imported_module=module_name,
-                imported_names=imported_names,
-                line=node.start_point[0] + 1,
-                is_from_import=True,
-            ))
+            index.add_import(
+                ImportRelation(
+                    importing_file=file_path,
+                    imported_module=module_name,
+                    imported_names=imported_names,
+                    line=node.start_point[0] + 1,
+                    is_from_import=True,
+                )
+            )
 
     # Recurse into children
     for child in node.children:
@@ -236,10 +248,33 @@ def _extract_references(
 
         # Skip common Python builtins to reduce noise
         builtins = {
-            "True", "False", "None", "self", "cls", "print", "len", "range",
-            "str", "int", "float", "bool", "list", "dict", "set", "tuple",
-            "open", "type", "isinstance", "hasattr", "getattr", "setattr",
-            "super", "staticmethod", "classmethod", "property", "Exception",
+            "True",
+            "False",
+            "None",
+            "self",
+            "cls",
+            "print",
+            "len",
+            "range",
+            "str",
+            "int",
+            "float",
+            "bool",
+            "list",
+            "dict",
+            "set",
+            "tuple",
+            "open",
+            "type",
+            "isinstance",
+            "hasattr",
+            "getattr",
+            "setattr",
+            "super",
+            "staticmethod",
+            "classmethod",
+            "property",
+            "Exception",
         }
         if name in builtins:
             return
@@ -258,14 +293,16 @@ def _extract_references(
         elif parent and parent.type == "attribute":
             ref_type = "attribute"
 
-        index.add_reference(SymbolReference(
-            symbol_name=name,
-            file_path=file_path,
-            line=node.start_point[0] + 1,
-            column=node.start_point[1],
-            context=context[:200],  # Limit context length
-            ref_type=ref_type,
-        ))
+        index.add_reference(
+            SymbolReference(
+                symbol_name=name,
+                file_path=file_path,
+                line=node.start_point[0] + 1,
+                column=node.start_point[1],
+                context=context[:200],  # Limit context length
+                ref_type=ref_type,
+            )
+        )
 
     # Recurse into children
     for child in node.children:
@@ -300,7 +337,7 @@ def _strip_docstring(text: str) -> str:
     """Remove docstring quotes and normalize whitespace."""
     for quote in ('"""', "'''", '"', "'"):
         if text.startswith(quote) and text.endswith(quote):
-            text = text[len(quote):-len(quote)]
+            text = text[len(quote) : -len(quote)]
             break
     return text.strip()
 
@@ -340,4 +377,3 @@ async def build_symbol_index(
 
     save_symbol_index(index)
     return index
-

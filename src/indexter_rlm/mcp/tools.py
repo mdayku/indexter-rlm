@@ -176,10 +176,7 @@ async def get_file(
         actual_end = total_lines
 
     # Format with line numbers
-    numbered_lines = [
-        f"{i:4d} | {line}"
-        for i, line in enumerate(lines, start=actual_start)
-    ]
+    numbered_lines = [f"{i:4d} | {line}" for i, line in enumerate(lines, start=actual_start)]
     formatted_content = "\n".join(numbered_lines)
 
     # Log the file read
@@ -673,13 +670,15 @@ async def list_file_symbols(
     for sym_name in symbol_names:
         for defn in index.find_definitions(sym_name):
             if defn.file_path == file_path:
-                symbols.append({
-                    "name": defn.name,
-                    "qualified_name": defn.qualified_name,
-                    "type": defn.symbol_type,
-                    "line": defn.line,
-                    "signature": defn.signature,
-                })
+                symbols.append(
+                    {
+                        "name": defn.name,
+                        "qualified_name": defn.qualified_name,
+                        "type": defn.symbol_type,
+                        "line": defn.line,
+                        "signature": defn.signature,
+                    }
+                )
 
     # Sort by line number
     symbols.sort(key=lambda s: s["line"])

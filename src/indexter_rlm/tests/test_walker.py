@@ -12,8 +12,7 @@ from indexter_rlm.walker import IgnorePatternMatcher, Walker
 
 # Skip symlink tests on Windows (requires admin privileges)
 skip_symlinks_on_windows = pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="Symlink creation requires admin privileges on Windows"
+    sys.platform == "win32", reason="Symlink creation requires admin privileges on Windows"
 )
 
 
@@ -59,8 +58,7 @@ class TestIgnorePatternMatcher:
         assert matcher._patterns == []
 
     @pytest.mark.skipif(
-        sys.platform == "win32",
-        reason="File permissions work differently on Windows"
+        sys.platform == "win32", reason="File permissions work differently on Windows"
     )
     def test_add_patterns_from_file_read_error(self, tmp_path, caplog):
         """Test handling of file read errors."""

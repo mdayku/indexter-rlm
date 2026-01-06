@@ -229,4 +229,3 @@ def clear_note_store_cache() -> None:
     Used for testing to ensure a clean state between tests.
     """
     _note_stores.clear()
-

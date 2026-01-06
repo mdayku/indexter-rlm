@@ -37,8 +37,7 @@ from .tools import (
 mcp = FastMCP(
     "indexter-rlm",
     instructions=(
-        "RLM-style context environment for coding agents - "
-        "recursive navigation over semantic code"
+        "RLM-style context environment for coding agents - recursive navigation over semantic code"
     ),
 )
 

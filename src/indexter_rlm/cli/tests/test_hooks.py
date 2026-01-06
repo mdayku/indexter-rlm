@@ -1,6 +1,5 @@
 """Tests for git hook management."""
 
-
 from typer.testing import CliRunner
 
 from indexter_rlm.cli.hooks import (
@@ -243,4 +242,3 @@ class TestHookStatus:
 
         assert result.exit_code == 1
         assert "not a git repository" in result.output
-

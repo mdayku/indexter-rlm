@@ -173,8 +173,7 @@ def get_embedder() -> Embedder:
         api_key = settings.embedding.openai_api_key or os.environ.get("OPENAI_API_KEY")
         if not api_key:
             logger.warning(
-                "OpenAI provider selected but no API key found. "
-                "Falling back to local FastEmbed."
+                "OpenAI provider selected but no API key found. Falling back to local FastEmbed."
             )
             return LocalEmbedder(model="BAAI/bge-small-en-v1.5")
         return OpenAIEmbedder(model=model, api_key=api_key)
@@ -202,4 +201,3 @@ def clear_embedder_cache() -> None:
     """Clear the cached embedder. For testing."""
     global _embedder
     _embedder = None
-

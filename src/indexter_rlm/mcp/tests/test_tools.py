@@ -772,7 +772,7 @@ async def test_get_symbols_tool_symbols_sorted_by_line(
 ):
     """Test that get_symbols returns symbols sorted by line number."""
     test_file = tmp_path / "ordered.py"
-    test_file.write_text('''class First:
+    test_file.write_text("""class First:
     pass
 
 def second():
@@ -780,7 +780,7 @@ def second():
 
 class Third:
     pass
-''')
+""")
 
     with patch("indexter_rlm.mcp.tools.Repo.get", new_callable=AsyncMock) as mock_get:
         mock_repo = MagicMock()
@@ -802,9 +802,9 @@ class Third:
 async def test_get_symbols_tool_symbol_structure(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test that symbols have expected fields: name, type, line."""
     test_file = tmp_path / "structure.py"
-    test_file.write_text('''def my_function():
+    test_file.write_text("""def my_function():
     pass
-''')
+""")
 
     with patch("indexter_rlm.mcp.tools.Repo.get", new_callable=AsyncMock) as mock_get:
         mock_repo = MagicMock()
@@ -1141,9 +1141,7 @@ async def test_note_repo_not_found(mcp_client: Client[FastMCPTransport]):
 # =============================================================================
 
 
-async def test_find_references_tool_success(
-    mcp_client: Client[FastMCPTransport], tmp_path
-):
+async def test_find_references_tool_success(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test find_references tool returns definitions and references."""
     from pathlib import Path as PathType
 
@@ -1208,15 +1206,15 @@ async def test_find_references_tool_with_import_chains(
     clear_symbol_index_cache()
 
     # Create test files
-    (tmp_path / "module_a.py").write_text('''
+    (tmp_path / "module_a.py").write_text("""
 def shared_func():
     pass
-''')
-    (tmp_path / "module_b.py").write_text('''
+""")
+    (tmp_path / "module_b.py").write_text("""
 from module_a import shared_func
 
 shared_func()
-''')
+""")
 
     with patch("indexter_rlm.mcp.tools.Repo.get", new_callable=AsyncMock) as mock_get:
         mock_repo = MagicMock()
@@ -1254,9 +1252,7 @@ shared_func()
                     assert "import_chains" in result.data
 
 
-async def test_find_references_tool_not_found(
-    mcp_client: Client[FastMCPTransport], tmp_path
-):
+async def test_find_references_tool_not_found(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test find_references returns empty results for unknown symbol."""
     from pathlib import Path as PathType
 
@@ -1306,9 +1302,7 @@ async def test_find_references_tool_not_found(
 # =============================================================================
 
 
-async def test_find_definition_tool_success(
-    mcp_client: Client[FastMCPTransport], tmp_path
-):
+async def test_find_definition_tool_success(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test find_definition tool finds symbol definition."""
     from pathlib import Path as PathType
 
@@ -1358,9 +1352,7 @@ class UserService:
                 assert result.data["definitions"][0]["type"] == "class"
 
 
-async def test_find_definition_tool_not_found(
-    mcp_client: Client[FastMCPTransport], tmp_path
-):
+async def test_find_definition_tool_not_found(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test find_definition returns error for unknown symbol."""
     from pathlib import Path as PathType
 
@@ -1406,9 +1398,7 @@ async def test_find_definition_tool_not_found(
 # =============================================================================
 
 
-async def test_list_definitions_tool_success(
-    mcp_client: Client[FastMCPTransport], tmp_path
-):
+async def test_list_definitions_tool_success(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test list_definitions returns all symbols in a file."""
     from pathlib import Path as PathType
 
@@ -1417,7 +1407,7 @@ async def test_list_definitions_tool_success(
     clear_symbol_index_cache()
 
     test_file = tmp_path / "module.py"
-    test_file.write_text('''
+    test_file.write_text("""
 MAX_SIZE = 100
 
 class DataProcessor:
@@ -1429,7 +1419,7 @@ class DataProcessor:
 
 def helper_function():
     pass
-''')
+""")
 
     with patch("indexter_rlm.mcp.tools.Repo.get", new_callable=AsyncMock) as mock_get:
         mock_repo = MagicMock()
@@ -1437,9 +1427,7 @@ def helper_function():
         mock_repo.path = PathType(tmp_path)
         mock_get.return_value = mock_repo
 
-        with patch(
-            "indexter_rlm.symbols.get_config_dir", return_value=tmp_path / ".config"
-        ):
+        with patch("indexter_rlm.symbols.get_config_dir", return_value=tmp_path / ".config"):
             result = await mcp_client.call_tool(
                 name="list_definitions",
                 arguments={
@@ -1457,9 +1445,7 @@ def helper_function():
             assert "helper_function" in symbol_names
 
 
-async def test_list_definitions_tool_empty_file(
-    mcp_client: Client[FastMCPTransport], tmp_path
-):
+async def test_list_definitions_tool_empty_file(mcp_client: Client[FastMCPTransport], tmp_path):
     """Test list_definitions returns empty list for file with no definitions."""
     from pathlib import Path as PathType
 
@@ -1476,9 +1462,7 @@ async def test_list_definitions_tool_empty_file(
         mock_repo.path = PathType(tmp_path)
         mock_get.return_value = mock_repo
 
-        with patch(
-            "indexter_rlm.symbols.get_config_dir", return_value=tmp_path / ".config"
-        ):
+        with patch("indexter_rlm.symbols.get_config_dir", return_value=tmp_path / ".config"):
             result = await mcp_client.call_tool(
                 name="list_definitions",
                 arguments={

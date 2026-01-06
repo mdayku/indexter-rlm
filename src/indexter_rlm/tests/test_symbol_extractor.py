@@ -1,6 +1,5 @@
 """Tests for the symbol extractor module."""
 
-
 from indexter_rlm.symbol_extractor import (
     extract_python_symbols,
 )
@@ -43,11 +42,11 @@ class MyClass:
         assert "A test class" in definitions[0].documentation
 
     def test_extract_method_definition(self):
-        code = '''
+        code = """
 class MyClass:
     def my_method(self) -> None:
         pass
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
@@ -57,10 +56,10 @@ class MyClass:
         assert definitions[0].qualified_name == "MyClass.my_method"
 
     def test_extract_constant_definition(self):
-        code = '''
+        code = """
 MAX_RETRIES = 3
 TIMEOUT_SECONDS = 30
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
@@ -69,10 +68,10 @@ TIMEOUT_SECONDS = 30
         assert definitions[0].symbol_type == "constant"
 
     def test_extract_import_statement(self):
-        code = '''
+        code = """
 import os
 import json
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
@@ -82,28 +81,26 @@ import json
         assert "json" in modules
 
     def test_extract_from_import(self):
-        code = '''
+        code = """
 from pathlib import Path
 from typing import List, Dict
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
         assert len(index.imports) == 2
-        pathlib_import = next(
-            (i for i in index.imports if i.imported_module == "pathlib"), None
-        )
+        pathlib_import = next((i for i in index.imports if i.imported_module == "pathlib"), None)
         assert pathlib_import is not None
         assert pathlib_import.is_from_import
         assert "Path" in pathlib_import.imported_names
 
     def test_extract_symbol_references(self):
-        code = '''
+        code = """
 def greet(name):
     return f"Hello, {name}"
 
 result = greet("World")
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
@@ -113,14 +110,14 @@ result = greet("World")
         assert any(r.ref_type == "call" for r in references)
 
     def test_clear_file_removes_old_symbols(self):
-        code_v1 = '''
+        code_v1 = """
 def old_function():
     pass
-'''
-        code_v2 = '''
+"""
+        code_v2 = """
 def new_function():
     pass
-'''
+"""
         index = SymbolIndex(repo_name="test")
 
         # First extraction
@@ -151,7 +148,7 @@ def complex_function(
         assert "arg1: int" in definitions[0].signature
 
     def test_file_symbols_tracks_all_definitions(self):
-        code = '''
+        code = """
 class MyClass:
     def method1(self):
         pass
@@ -163,7 +160,7 @@ def standalone():
     pass
 
 CONSTANT = 42
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
@@ -175,11 +172,11 @@ CONSTANT = 42
         # CONSTANT might not be tracked if it doesn't match uppercase pattern strictly
 
     def test_builtins_not_tracked_as_references(self):
-        code = '''
+        code = """
 x = len([1, 2, 3])
 y = str(42)
 z = print("hello")
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
@@ -189,13 +186,12 @@ z = print("hello")
         assert len(index.find_references("print")) == 0
 
     def test_reference_context_captured(self):
-        code = '''
+        code = """
 result = my_function(42, "test")
-'''
+"""
         index = SymbolIndex(repo_name="test")
         extract_python_symbols("test.py", code, index)
 
         refs = index.find_references("my_function")
         assert len(refs) == 1
         assert "my_function(42" in refs[0].context
-

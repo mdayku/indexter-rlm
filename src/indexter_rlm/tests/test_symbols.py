@@ -1,6 +1,5 @@
 """Tests for the symbol index module."""
 
-
 from indexter_rlm.symbols import (
     ImportRelation,
     SymbolDefinition,
@@ -269,4 +268,3 @@ class TestSymbolIndexPersistence:
 
         assert loaded.repo_name == "persist-test"
         assert len(loaded.find_definitions("TestFunc")) == 1
-
