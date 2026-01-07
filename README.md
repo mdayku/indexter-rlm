@@ -42,10 +42,12 @@ Key differences:
 
 ## Installation
 
+> **New to Indexter-RLM?** See [QUICKSTART.md](QUICKSTART.md) for a step-by-step guide to setting up Cursor integration.
+
 ### From Source (recommended for now)
 
 ```bash
-git clone https://github.com/marcusche/indexter-rlm.git
+git clone https://github.com/mdayku/indexter-rlm.git
 cd indexter-rlm
 pip install -e ".[full]"
 ```
